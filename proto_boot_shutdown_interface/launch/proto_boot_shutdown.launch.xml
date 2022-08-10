@@ -1,0 +1,16 @@
+<launch>
+  <arg name="hostname" default="proto"/>
+  <arg name="proto_boot_shutdown_param_path" default="$(find-pkg-share proto_boot_shutdown_interface)/config/proto_boot_shutdown.param.yaml"/>
+
+  <group>
+    <let name="service/preapare_shutdown" value="/api/$(var hostname)/prepare_shutdown"/>
+    <let name="service/execute_shutdown" value="/api/$(var hostname)/execute_shutdown"/>
+    <let name="output/ecu_state" value="/$(var hostname)/get/ecu_state"/>
+    <node pkg="proto_boot_shutdown_interface" name="$(var hostname)_boot_shutdown_interface" exec="proto_boot_shutdown_interface_node.py" output="screen">
+      <remap from="~/service/prepare_shutdown" to="$(var service/preapare_shutdown)"/>
+      <remap from="~/service/execute_shutdown" to="$(var service/execute_shutdown)"/>
+      <remap from="~/output/ecu_state" to="$(var output/ecu_state)"/>
+      <param from="$(var proto_boot_shutdown_param_path)"/>
+    </node>
+  </group>
+</launch>
