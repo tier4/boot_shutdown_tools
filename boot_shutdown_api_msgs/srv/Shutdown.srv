@@ -1,2 +1,2 @@
 ---
-autoware_ad_api_msgs/common/msg/ResponseStatus status
+autoware_ad_api_msgs/ResponseStatus status

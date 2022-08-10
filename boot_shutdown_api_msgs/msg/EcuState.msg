@@ -9,4 +9,4 @@ uint16 SHUTDOWN_TIMEOUT = 1002
 uint16 state
 string name
 string message
-builtin_interface/Time power_off_time  # Invalid value except for SHUTDOWN_READY
+builtin_interfaces/Time power_off_time  # Invalid value except for SHUTDOWN_READY

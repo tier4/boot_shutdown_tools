@@ -1,3 +1,3 @@
 ---
-autoware_ad_api_msgs/common/msg/ResponseStatus status
-builtin_interface/Time power_off_time  # estimated power-off time
+autoware_ad_api_msgs/ResponseStatus status
+builtin_interfaces/Time power_off_time  # estimated power-off time
