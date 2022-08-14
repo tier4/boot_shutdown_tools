@@ -26,14 +26,15 @@ class ProtoBootShutdownInterfaceNode(Node):
     def __init__(self):
         super().__init__("proto_boot_shutdown")
 
-        self.startup_timeout = self.declare_parameter('startup_timeout', 180).value
-        self.preparation_timeout = self.declare_parameter('preparation_timeout', 180).value
+        self.ecu_name = self.declare_parameter("ecu_name", "ecu").value
+        self.startup_timeout = self.declare_parameter("startup_timeout", 180).value
+        self.preparation_timeout = self.declare_parameter("preparation_timeout", 180).value
 
         # Artificial delay for debugging
-        self.preparation_delay = self.declare_parameter('debug.preparation_delay', 5).value
-        self.shutdown_delay = self.declare_parameter('debug.shutdown_delay', 5).value
+        self.preparation_delay = self.declare_parameter("debug.preparation_delay", 5).value
+        self.shutdown_delay = self.declare_parameter("debug.shutdown_delay", 5).value
 
-        self.ecu_state = EcuState(state=EcuState.STARTUP)
+        self.ecu_state = EcuState(name=self.ecu_name, state=EcuState.STARTUP)
         self.startup_time = self.get_clock().now()
         self.preparation_process = None
 
