@@ -33,11 +33,11 @@ using boot_shutdown_api_msgs::srv::Shutdown;
 
 struct EcuClient
 {
-  bool is_primary;
   EcuState::SharedPtr ecu_state;
   rclcpp::Subscription<EcuState>::SharedPtr sub_ecu_state;
   rclcpp::Client<ExecuteShutdown>::SharedPtr cli_execute;
   rclcpp::Client<PrepareShutdown>::SharedPtr cli_prepare;
+  bool skip_shutdown;
 };
 
 class BootShutdownManager : public rclcpp::Node
@@ -53,6 +53,8 @@ private:
   EcuStateSummary ecu_state_summary_;
   std::map<std::string, std::shared_ptr<EcuClient>> ecu_client_map_;
   rclcpp::Time last_transition_stamp_;
+  double startup_timeout_;
+  double preparation_timeout_;
   bool is_shutting_down;
 
   void onShutdownService(
