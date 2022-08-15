@@ -74,10 +74,11 @@ class ProtoBootShutdownInterfaceNode(Node):
             self.shutdown_process = subprocess.Popen(f"shutdown -h -t {self.shutdown_delay}", shell=True)
         except:
             pass
-
+        
+        power_off_time = (self.get_clock().now() + rclpy.duration.Duration(seconds=self.shutdown_delay)).to_msg()
+        self.ecu_state.power_off_time = power_off_time
         response.status.success = True
-        response.power_off_time = (self.get_clock().now() +
-                                   rclpy.duration.Duration(seconds=self.shutdown_delay)).to_msg()
+        response.power_off_time = power_off_time
         return response
 
     def on_timer(self):
