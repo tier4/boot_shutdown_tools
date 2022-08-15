@@ -16,6 +16,7 @@
 #define BOOT_SHUTDOWN_MANAGER__BOOT_SHUTDOWN_MANAGER_HPP_
 
 #include <rclcpp/rclcpp.hpp>
+#include <tier4_api_utils/tier4_api_utils.hpp>
 
 #include <boot_shutdown_api_msgs/msg/ecu_state.hpp>
 #include <boot_shutdown_api_msgs/msg/ecu_state_summary.hpp>
@@ -35,24 +36,27 @@ struct EcuClient
 {
   EcuState::SharedPtr ecu_state;
   rclcpp::Subscription<EcuState>::SharedPtr sub_ecu_state;
-  rclcpp::Client<ExecuteShutdown>::SharedPtr cli_execute;
-  rclcpp::Client<PrepareShutdown>::SharedPtr cli_prepare;
+  tier4_api_utils::Client<ExecuteShutdown>::SharedPtr cli_execute;
+  tier4_api_utils::Client<PrepareShutdown>::SharedPtr cli_prepare;
   bool skip_shutdown;
 };
 
 class BootShutdownManager : public rclcpp::Node
 {
 public:
-  explicit BootShutdownManager(rclcpp::NodeOptions node_options);
+  BootShutdownManager();
 
 private:
   rclcpp::Publisher<EcuStateSummary>::SharedPtr pub_ecu_state_summary_;
-  rclcpp::Service<Shutdown>::SharedPtr srv_shutdown;
+  tier4_api_utils::Service<Shutdown>::SharedPtr srv_shutdown;
   rclcpp::TimerBase::SharedPtr timer_;
+
+  rclcpp::CallbackGroup::SharedPtr callback_group_;
 
   EcuStateSummary ecu_state_summary_;
   std::map<std::string, std::shared_ptr<EcuClient>> ecu_client_map_;
   rclcpp::Time last_transition_stamp_;
+  double update_rate_;
   double startup_timeout_;
   double preparation_timeout_;
   bool is_shutting_down;

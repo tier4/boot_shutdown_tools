@@ -1,5 +1,5 @@
 # Description:
-#   managed_ecu: <- Fixed, Don't CHANGE.
+#   managed_ecu: <- Fixed, Don't Change.
 #     ecu_name: <- Any number of units can be added
 #       state: {EcuState topic name}
 #       prepare: {PrepareShutdown service name}
@@ -16,10 +16,10 @@
 /**:
   ros__parameters:
     managed_ecu:
-      # autoware_ecu:
-      #   state: /autoware_ecu/get/ecu_state
-      #   prepare: /api/autoware_ecu/prepare_shutdown
-      #   execute: /api/autoware_ecu/execute_shutdown
+      autoware_ecu:
+        state: /autoware_ecu/get/ecu_state
+        prepare: /api/autoware_ecu/prepare_shutdown
+        execute: /api/autoware_ecu/execute_shutdown
       mot:
         skip_shutdown: true 
       logging: default
