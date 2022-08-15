@@ -71,7 +71,7 @@ class ProtoBootShutdownInterfaceNode(Node):
         try:
             # Shutdown
             # Avoid using "now" and delay shutdown to publish ecu_state
-            subprocess.check_call(f"shutdown -h -t {self.shutdown_delay}", shell=True)
+            self.shutdown_process = subprocess.Popen(f"shutdown -h -t {self.shutdown_delay}", shell=True)
         except:
             pass
 
