@@ -1,0 +1,16 @@
+/**:
+  ros__parameters:
+    managed_ecu:
+      autoware_ecu:
+        state: /autoware_ecu/get/ecu_state
+        prepare: /api/autoware_ecu/prepare_shutdown
+        execute: /api/autoware_ecu/execute_shutdown
+        primary: true
+      logging: default
+      perception0: default
+      perception1: default
+      perception2: default
+      perception3: default
+      signage0: default
+      signage1: default
+      media_streaming: default

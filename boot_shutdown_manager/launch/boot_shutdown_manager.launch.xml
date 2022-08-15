@@ -1,0 +1,6 @@
+<launch>
+  <arg name="boot_shutdown_manager_param_path" default="$(find-pkg-share boot_shutdown_manager)/config/boot_shutdown_manager.param.yaml"/>
+  <node pkg="boot_shutdown_manager" exec="boot_shutdown_manager_node" name="boot_shutdown_manager" output="screen">
+    <param from="$(var boot_shutdown_manager_param_path)"/>
+  </node>
+</launch>
