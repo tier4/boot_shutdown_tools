@@ -1,16 +1,25 @@
+# Description:
+#   managed_ecu: <- Fixed, Don't CHANGE.
+#     ecu_name: <- Any number of units can be added
+#       state: {EcuState topic name}
+#       prepare: {PrepareShutdown service name}
+#       execute: {Executeshutdown service name}
+#       skip_shutdown: {when true, the manager do not execute shutdown for this unit}
+#
+# Note:
+# default values are:
+#   state: /{ecu_name}/get/ecu_state
+#   prepare: /api/{ecu_name}/prepare_shutdown
+#   execute: /api/{ecu_name}/execute_shutdown
+#   skip_shutdown: false
+---
 /**:
   ros__parameters:
     managed_ecu:
-      autoware_ecu:
-        state: /autoware_ecu/get/ecu_state
-        prepare: /api/autoware_ecu/prepare_shutdown
-        execute: /api/autoware_ecu/execute_shutdown
-        primary: true
+      # autoware_ecu:
+      #   state: /autoware_ecu/get/ecu_state
+      #   prepare: /api/autoware_ecu/prepare_shutdown
+      #   execute: /api/autoware_ecu/execute_shutdown
+      mot:
+        skip_shutdown: true 
       logging: default
-      perception0: default
-      perception1: default
-      perception2: default
-      perception3: default
-      signage0: default
-      signage1: default
-      media_streaming: default
