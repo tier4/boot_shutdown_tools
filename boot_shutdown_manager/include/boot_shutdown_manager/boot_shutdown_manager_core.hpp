@@ -44,7 +44,7 @@ struct EcuClient
 class BootShutdownManager : public rclcpp::Node
 {
 public:
-  BootShutdownManager();
+  BootShutdownManager(rclcpp::NodeOptions node_options);
 
 private:
   rclcpp::Publisher<EcuStateSummary>::SharedPtr pub_ecu_state_summary_;

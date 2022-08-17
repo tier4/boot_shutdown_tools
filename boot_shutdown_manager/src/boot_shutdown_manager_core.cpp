@@ -34,10 +34,10 @@ std::vector<std::string> split(const std::string & str, const char delim)
 namespace boot_shutdown_manager
 {
 
-BootShutdownManager::BootShutdownManager()
+BootShutdownManager::BootShutdownManager(rclcpp::NodeOptions node_options)
 : Node(
     "boot_shutdown_manager",
-    rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true))
+    node_options.automatically_declare_parameters_from_overrides(true))
 {
   using std::placeholders::_1;
   using std::placeholders::_2;
