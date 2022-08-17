@@ -179,9 +179,9 @@ void BootShutdownManager::onTimer()
   pub_ecu_state_summary_->publish(ecu_state_summary_);
 }
 
-bool BootShutdownManager::isRunning()
+bool BootShutdownManager::isRunning() const
 {
-  for (auto & [ecu_name, client] : ecu_client_map_) {
+  for (const auto & [ecu_name, client] : ecu_client_map_) {
     if (!client->ecu_state || client->ecu_state->state != EcuState::RUNNING) {
       return false;
     }
@@ -189,9 +189,9 @@ bool BootShutdownManager::isRunning()
   return true;
 }
 
-bool BootShutdownManager::isReady()
+bool BootShutdownManager::isReady() const
 {
-  for (auto & [ecu_name, client] : ecu_client_map_) {
+  for (const auto & [ecu_name, client] : ecu_client_map_) {
     if (client->skip_shutdown) {
       continue;
     }
