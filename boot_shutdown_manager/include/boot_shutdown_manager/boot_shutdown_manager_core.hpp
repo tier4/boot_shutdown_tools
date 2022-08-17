@@ -65,8 +65,8 @@ private:
     Shutdown::Request::SharedPtr request, Shutdown::Response::SharedPtr response);
 
   void onTimer();
-  bool isRunning();
-  bool isReady();
+  bool isRunning() const;
+  bool isReady() const;
   void executeShutdown();
 };
 
