@@ -22,7 +22,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   srv/Shutdown.srv
   DEPENDENCIES
     builtin_interfaces
-    autoware_ad_api_msgs
+    autoware_adapi_v1_msgs
 )
 
 if(BUILD_TESTING)

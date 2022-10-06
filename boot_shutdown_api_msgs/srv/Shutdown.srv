@@ -1,2 +1,2 @@
 ---
-autoware_ad_api_msgs/ResponseStatus status
+autoware_adapi_v1_msgs/ResponseStatus status
