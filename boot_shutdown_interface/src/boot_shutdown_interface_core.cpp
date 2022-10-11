@@ -23,6 +23,7 @@ namespace boot_shutdown_interface
 BootShutdownInterface::BootShutdownInterface()
 : Node("boot_shutdown"),
   ecu_name_(declare_parameter("ecu_name", std::string("ecu"))),
+  bagpacker_topic_(declare_parameter("bagpacker_topic", std::string("/bagpacker/state"))),
   startup_timeout_(declare_parameter("startup_timeout", 300)),
   preparation_timeout_(declare_parameter("preparation_timeout", 60)),
   // Artificial delay for debugging
@@ -50,6 +51,10 @@ BootShutdownInterface::BootShutdownInterface()
 
   pub_ecu_state_ =
     create_publisher<EcuState>("~/output/ecu_state", rclcpp::QoS{1});
+
+  sub_bagpacker_topic_ = create_subscription<std_msgs::msg::String>(
+    bagpacker_topic_, rclcpp::QoS{1},
+    std::bind(&BootShutdownInterface::onBagpackerTopicSubscribe, this, _1));
 
   timer_ = rclcpp::create_timer(
     this, get_clock(), 1s, std::bind(&BootShutdownInterface::onTimer, this));
@@ -88,12 +93,17 @@ void BootShutdownInterface::onExecuteShutdown(
   response->power_off_time = power_off_time;
 }
 
+void BootShutdownInterface::onBagpackerTopicSubscribe(const std_msgs::msg::String::SharedPtr msg)
+{
+  if (ecu_state_.state == EcuState::STARTUP) {
+    ecu_state_.state = EcuState::RUNNING;
+  }
+}
+
 void BootShutdownInterface::onTimer()
 {
   if (ecu_state_.state == EcuState::STARTUP) {
-    if (isRunning()) {
-      ecu_state_.state = EcuState::RUNNING;
-    } else if (isStartupTimeout()) {
+    if (isStartupTimeout()) {
       ecu_state_.state = EcuState::STARTUP_TIMEOUT;
     }
   } else if (ecu_state_.state == EcuState::SHUTDOWN_PREPARING) {
@@ -105,12 +115,6 @@ void BootShutdownInterface::onTimer()
   }
 
   pub_ecu_state_->publish(ecu_state_);
-}
-
-bool BootShutdownInterface::isRunning()
-{
-  // implement process to check for startup
-  return true;
 }
 
 bool BootShutdownInterface::isStartupTimeout()
