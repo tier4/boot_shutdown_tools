@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "boot_shutdown_interface/boot_shutdown_interface_core.hpp"
+#include "boot_shutdown_interface/boot_shutdown_interface.hpp"
 
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
@@ -20,10 +20,9 @@
 namespace boot_shutdown_interface
 {
 
-BootShutdownInterface::BootShutdownInterface()
-: Node("boot_shutdown"),
+BootShutdownInterface::BootShutdownInterface(const rclcpp::NodeOptions & options)
+: Node("boot_shutdown", options),
   ecu_name_(declare_parameter("ecu_name", std::string("ecu"))),
-  bagpacker_topic_(declare_parameter("bagpacker_topic", std::string("/bagpacker/state"))),
   startup_timeout_(declare_parameter("startup_timeout", 300)),
   preparation_timeout_(declare_parameter("preparation_timeout", 60)),
   // Artificial delay for debugging
@@ -52,9 +51,24 @@ BootShutdownInterface::BootShutdownInterface()
   pub_ecu_state_ =
     create_publisher<EcuState>("~/output/ecu_state", rclcpp::QoS{1});
 
-  sub_bagpacker_topic_ = create_subscription<std_msgs::msg::String>(
-    bagpacker_topic_, rclcpp::QoS{1},
-    std::bind(&BootShutdownInterface::onBagpackerTopicSubscribe, this, _1));
+  auto qos = rclcpp::QoS{1};
+  if (declare_parameter(
+      "topic_config.transient_local",
+      static_cast<rclcpp::ParameterValue>(false)).get<bool>())
+  {
+    qos.transient_local();
+  }
+  if (declare_parameter(
+      "topic_config.best_effort",
+      static_cast<rclcpp::ParameterValue>(false)).get<bool>())
+  {
+    qos.best_effort();
+  }
+
+  sub_topic_ = create_generic_subscription(
+    declare_parameter("topic_config.name", rclcpp::PARAMETER_STRING).get<std::string>(),
+    declare_parameter("topic_config.type", rclcpp::PARAMETER_STRING).get<std::string>(),
+    qos, std::bind(&BootShutdownInterface::onTopic, this, std::placeholders::_1));
 
   timer_ = rclcpp::create_timer(
     this, get_clock(), 1s, std::bind(&BootShutdownInterface::onTimer, this));
@@ -93,7 +107,8 @@ void BootShutdownInterface::onExecuteShutdown(
   response->power_off_time = power_off_time;
 }
 
-void BootShutdownInterface::onBagpackerTopicSubscribe(const std_msgs::msg::String::SharedPtr msg)
+void BootShutdownInterface::onTopic(
+  [[maybe_unused]] const std::shared_ptr<rclcpp::SerializedMessage> msg)
 {
   if (ecu_state_.state == EcuState::STARTUP) {
     ecu_state_.state = EcuState::RUNNING;
@@ -133,3 +148,7 @@ bool BootShutdownInterface::isReady()
 }
 
 }  // namespace boot_shutdown_interface
+
+#include <rclcpp_components/register_node_macro.hpp>
+RCLCPP_COMPONENTS_REGISTER_NODE(boot_shutdown_interface::BootShutdownInterface)
+

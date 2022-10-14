@@ -1,6 +1,5 @@
 <launch>
   <arg name="ecu_name" default="ecu"/>
-  <arg name="bagpacker_topic" default="/bagpacker/state"/>
   <arg name="boot_shutdown_param_path" default="$(find-pkg-share boot_shutdown_interface)/config/boot_shutdown.param.yaml"/>
 
   <group>
@@ -12,7 +11,6 @@
 
     <node pkg="boot_shutdown_interface" name="boot_shutdown_interface" exec="boot_shutdown_interface" output="screen">
       <param name="ecu_name" value="$(var ecu_name)"/>
-      <param name="bagpacker_topic" value="$(var bagpacker_topic)"/>
       <remap from="~/service/prepare_shutdown" to="$(var service/preapare_shutdown)"/>
       <remap from="~/service/execute_shutdown" to="$(var service/execute_shutdown)"/>
       <remap from="~/output/ecu_state" to="$(var output/ecu_state)"/>

@@ -8,9 +8,13 @@ find_package(Boost REQUIRED COMPONENTS
 
 ament_auto_find_build_dependencies()
 
-ament_auto_add_executable(boot_shutdown_interface
-  src/boot_shutdown_interface_core.cpp
-  src/boot_shutdown_interface_node.cpp
+ament_auto_add_library(boot_shutdown_interface_node SHARED
+  src/boot_shutdown_interface.cpp
+)
+
+rclcpp_components_register_node(boot_shutdown_interface_node
+  PLUGIN "boot_shutdown_interface::BootShutdownInterface"
+  EXECUTABLE boot_shutdown_interface
 )
 
 ament_auto_package(

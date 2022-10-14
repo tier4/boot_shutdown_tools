@@ -4,3 +4,9 @@
     preparation_timeout: 180
     debug:
       preparation_delay: 5
+
+    topic_config:
+      name: "/bagpacker/state"
+      type: "std_msgs/msg/String"
+      transient_local: False
+      best_effort: False

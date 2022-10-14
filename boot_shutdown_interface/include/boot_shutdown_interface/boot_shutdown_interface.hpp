@@ -35,17 +35,16 @@ using boot_shutdown_api_msgs::srv::PrepareShutdown;
 class BootShutdownInterface : public rclcpp::Node
 {
 public:
-  BootShutdownInterface();
+  explicit BootShutdownInterface(const rclcpp::NodeOptions & options);
 
 private:
   rclcpp::Publisher<EcuState>::SharedPtr pub_ecu_state_;
-  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr sub_bagpacker_topic_;
+  rclcpp::GenericSubscription::SharedPtr sub_topic_;
   rclcpp::Service<PrepareShutdown>::SharedPtr srv_prepare_shutdown_;
   rclcpp::Service<ExecuteShutdown>::SharedPtr srv_execute_shutdown_;
   rclcpp::TimerBase::SharedPtr timer_;
 
   std::string ecu_name_;
-  std::string bagpacker_topic_;
   unsigned int startup_timeout_;
   unsigned int preparation_timeout_;
   unsigned int preparation_delay_;
@@ -59,7 +58,7 @@ private:
     PrepareShutdown::Request::SharedPtr request, PrepareShutdown::Response::SharedPtr response);
   void onExecuteShutdown(
     ExecuteShutdown::Request::SharedPtr request, ExecuteShutdown::Response::SharedPtr response);
-  void onBagpackerTopicSubscribe(const std_msgs::msg::String::SharedPtr msg);
+  void onTopic(const std::shared_ptr<rclcpp::SerializedMessage> msg);
   void onTimer();
   bool isStartupTimeout();
   bool isPreparationTimeout();
