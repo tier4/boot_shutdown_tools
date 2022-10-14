@@ -1,0 +1,20 @@
+<launch>
+  <arg name="ecu_name" default="perception/one"/>
+  <arg name="boot_shutdown_param_path" default="$(find-pkg-share boot_shutdown_interface)/config/boot_shutdown.param.yaml"/>
+
+  <group>
+    <push-ros-namespace namespace="$(var ecu_name)"/>
+
+    <let name="service/preapare_shutdown" value="/api/$(var ecu_name)/prepare_shutdown"/>
+    <let name="service/execute_shutdown" value="/api/$(var ecu_name)/execute_shutdown"/>
+    <let name="output/ecu_state" value="/$(var ecu_name)/get/ecu_state"/>
+
+    <node pkg="boot_shutdown_interface" name="boot_shutdown_guest" exec="boot_shutdown_guest" output="screen">
+      <param name="ecu_name" value="$(var ecu_name)"/>
+      <remap from="~/service/prepare_shutdown" to="$(var service/preapare_shutdown)"/>
+      <remap from="~/service/execute_shutdown" to="$(var service/execute_shutdown)"/>
+      <remap from="~/output/ecu_state" to="$(var output/ecu_state)"/>
+      <param from="$(var boot_shutdown_param_path)"/>
+    </node>
+  </group>
+</launch>

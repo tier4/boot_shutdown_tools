@@ -1,6 +1,5 @@
 /**:
   ros__parameters:
     startup_timeout: 180
-    preparation_timeout: 180
-    debug:
-      preparation_delay: 5
+    prepare_shutdown_time: 180
+    execute_shutdown_time: 180
