@@ -15,7 +15,6 @@
 #include "boot_shutdown_interface/boot_shutdown_interface.hpp"
 
 #define FMT_HEADER_ONLY
-#include <fmt/format.h>
 
 namespace boot_shutdown_interface
 {
@@ -23,10 +22,9 @@ namespace boot_shutdown_interface
 BootShutdownInterface::BootShutdownInterface(const rclcpp::NodeOptions & options)
 : Node("boot_shutdown", options),
   ecu_name_(declare_parameter("ecu_name", std::string("ecu"))),
-  startup_timeout_(declare_parameter("startup_timeout", 300)),
-  preparation_timeout_(declare_parameter("preparation_timeout", 60)),
-  // Artificial delay for debugging
-  preparation_delay_(declare_parameter("debug.preparation_delay", 5))
+  startup_timeout_(declare_parameter("startup_timeout", 180)),
+  prepare_shutdown_time_(declare_parameter("prepare_shutdown_time", 1)),
+  execute_shutdown_time_(declare_parameter("execute_shutdown_time", 13))
 {
   using namespace std::literals::chrono_literals;
   using std::placeholders::_1;
@@ -82,14 +80,14 @@ void BootShutdownInterface::onPrepareShutdown(
   // Clear pagecache, dentries, and inodes.
   preparation_child_ = boost::process::child(
     "/bin/sh", "-c",
-    fmt::format("sync; echo 3 > /proc/sys/vm/drop_caches; sleep {}", preparation_delay_));
+    "sync; echo 3 > /proc/sys/vm/drop_caches");
 
   ecu_state_.state = EcuState::SHUTDOWN_PREPARING;
-  preparation_start_time_ = get_clock()->now();
+  prepare_shutdown_start_time_ = get_clock()->now();
 
   response->status.success = true;
-  response->power_off_time =
-    builtin_interfaces::msg::Time(get_clock()->now() + rclcpp::Duration(preparation_delay_, 0));
+  response->power_off_time = prepare_shutdown_start_time_ + rclcpp::Duration(
+    prepare_shutdown_time_ + execute_shutdown_time_, 0);
 }
 
 void BootShutdownInterface::onExecuteShutdown(
@@ -99,12 +97,11 @@ void BootShutdownInterface::onExecuteShutdown(
 
   // Shutdown
   // Avoid using "now" and delay shutdown to publish ecu_state
-  shutdown_child_ = boost::process::child("/bin/sh", "-c", fmt::format("shutdown -h now"));
+  shutdown_child_ = boost::process::child("/bin/sh", "-c", "shutdown -h now");
 
-  auto power_off_time = builtin_interfaces::msg::Time(get_clock()->now());
-  ecu_state_.power_off_time = power_off_time;
+  ecu_state_.power_off_time = get_clock()->now() + rclcpp::Duration(execute_shutdown_time_, 0);
   response->status.success = true;
-  response->power_off_time = power_off_time;
+  response->power_off_time = ecu_state_.power_off_time;
 }
 
 void BootShutdownInterface::onTopic(
@@ -139,7 +136,8 @@ bool BootShutdownInterface::isStartupTimeout()
 
 bool BootShutdownInterface::isPreparationTimeout()
 {
-  return (get_clock()->now() - preparation_start_time_) > rclcpp::Duration(preparation_timeout_, 0);
+  return (get_clock()->now() - prepare_shutdown_start_time_) >
+         rclcpp::Duration(prepare_shutdown_time_, 0);
 }
 
 bool BootShutdownInterface::isReady()
@@ -151,4 +149,3 @@ bool BootShutdownInterface::isReady()
 
 #include <rclcpp_components/register_node_macro.hpp>
 RCLCPP_COMPONENTS_REGISTER_NODE(boot_shutdown_interface::BootShutdownInterface)
-

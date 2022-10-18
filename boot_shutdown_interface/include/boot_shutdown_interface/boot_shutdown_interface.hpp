@@ -46,11 +46,11 @@ private:
 
   std::string ecu_name_;
   unsigned int startup_timeout_;
-  unsigned int preparation_timeout_;
-  unsigned int preparation_delay_;
+  unsigned int prepare_shutdown_time_;
+  unsigned int execute_shutdown_time_;
   EcuState ecu_state_;
   rclcpp::Time startup_time_;
-  rclcpp::Time preparation_start_time_;
+  rclcpp::Time prepare_shutdown_start_time_;
   boost::process::child preparation_child_;
   boost::process::child shutdown_child_;
 
