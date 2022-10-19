@@ -9,6 +9,8 @@ FROM dustynv/ros:galactic-ros-base-l4t-r$L4T_VERSION AS base
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
          geographiclib-tools \
+         libfmt-dev \
+         libboost-dev \
     && rm -rf /var/lib/apt/list/*
 
 
@@ -25,7 +27,7 @@ WORKDIR $OVERLAY_WS
 
 RUN . /opt/ros/$ROS_DISTRO/install/setup.sh && \
     colcon build \
-        --cmake-args -DCMAKE_BUILD_TYPE=Release
+        --cmake-args -DCMAKE_BUILD_TYPE=Release --packages-up-to boot_shutdown_interface
 
 ENV OVERLAY_WS=${OVERLAY_WS}
 
