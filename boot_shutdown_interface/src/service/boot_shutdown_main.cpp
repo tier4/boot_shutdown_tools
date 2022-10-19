@@ -23,16 +23,14 @@
 /**
  * @brief Print usage
  */
-void usage()
-{
+void usage() {
   printf("Usage: msr_reader [options]\n");
   printf("  -h --help   : Display help\n");
   printf("  -s --socket # : Path of UNIX domain socket.\n");
   printf("\n");
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
   static struct option long_options[] = {
       {"help", no_argument, 0, 'h'},
       {"socket", required_argument, nullptr, 's'},
@@ -43,10 +41,9 @@ int main(int argc, char **argv)
   int option_index = 0;
   std::string socket_path = boot_shutdown_interface::SOCKET_PATH;
 
-  while ((c = getopt_long(argc, argv, "hs:", long_options, &option_index)) != -1)
-  {
-    switch (c)
-    {
+  while ((c = getopt_long(argc, argv, "hs:", long_options, &option_index)) !=
+         -1) {
+    switch (c) {
     case 'h':
       usage();
       return EXIT_SUCCESS;
@@ -61,9 +58,9 @@ int main(int argc, char **argv)
   }
 
   // Put the program in the background
-  if (daemon(0, 0) < 0)
-  {
-    printf("Failed to put the program in the background. %s\n", strerror(errno));
+  if (daemon(0, 0) < 0) {
+    printf("Failed to put the program in the background. %s\n",
+           strerror(errno));
     return errno;
   }
 
@@ -73,8 +70,7 @@ int main(int argc, char **argv)
   // Initialize boot/shutdown service
   boot_shutdown_interface::BootShutdownService service(socket_path);
 
-  if (!service.initialize())
-  {
+  if (!service.initialize()) {
     service.shutdown();
     closelog();
     return EXIT_FAILURE;

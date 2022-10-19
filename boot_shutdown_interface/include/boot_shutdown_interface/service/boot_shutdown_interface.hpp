@@ -15,18 +15,16 @@
 #ifndef BOOT_SHUTDOWN_INTERFACE__SERVICE__BOOT_SHUTDOWN_INTERFACE_HPP_
 #define BOOT_SHUTDOWN_INTERFACE__SERVICE__BOOT_SHUTDOWN_INTERFACE_HPP_
 
-namespace boot_shutdown_interface
-{
+namespace boot_shutdown_interface {
 
-  static constexpr char SOCKET_PATH[] = "/tmp/boot_shutdown";
+static constexpr char SOCKET_PATH[] = "/tmp/boot_shutdown";
 
-  enum Request
-  {
-    NONE = 0,
-    PREPARE_SHUTDOWN,
-    EXECUTE_SHUTDOWN,
-    IS_READY_TO_SHUTDOWN,
-  };
+enum Request {
+  NONE = 0,
+  PREPARE_SHUTDOWN,
+  EXECUTE_SHUTDOWN,
+  IS_READY_TO_SHUTDOWN,
+};
 
 } // namespace boot_shutdown_interface
 

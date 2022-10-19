@@ -13,13 +13,13 @@
 // limitations under the License.
 
 #include "boot_shutdown_interface/boot_shutdown_interface_core.hpp"
-#include <rclcpp/rclcpp.hpp>
 #include <memory>
+#include <rclcpp/rclcpp.hpp>
 
-int main(int argc, char * argv[])
-{
+int main(int argc, char *argv[]) {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<boot_shutdown_interface::BootShutdownInterface>();
+  auto node =
+      std::make_shared<boot_shutdown_interface::BootShutdownInterface>();
   auto executor = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
   executor->add_node(node);
   executor->spin();

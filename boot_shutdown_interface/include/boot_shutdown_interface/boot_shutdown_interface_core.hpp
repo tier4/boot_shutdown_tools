@@ -25,14 +25,12 @@
 
 #include <string>
 
-namespace boot_shutdown_interface
-{
+namespace boot_shutdown_interface {
 using boot_shutdown_api_msgs::msg::EcuState;
 using boot_shutdown_api_msgs::srv::ExecuteShutdown;
 using boot_shutdown_api_msgs::srv::PrepareShutdown;
 
-class BootShutdownInterface : public rclcpp::Node
-{
+class BootShutdownInterface : public rclcpp::Node {
 public:
   BootShutdownInterface();
 
@@ -52,10 +50,10 @@ private:
   boost::process::child preparation_child_;
   boost::process::child shutdown_child_;
 
-  void onPrepareShutdown(
-    PrepareShutdown::Request::SharedPtr request, PrepareShutdown::Response::SharedPtr response);
-  void onExecuteShutdown(
-    ExecuteShutdown::Request::SharedPtr request, ExecuteShutdown::Response::SharedPtr response);
+  void onPrepareShutdown(PrepareShutdown::Request::SharedPtr request,
+                         PrepareShutdown::Response::SharedPtr response);
+  void onExecuteShutdown(ExecuteShutdown::Request::SharedPtr request,
+                         ExecuteShutdown::Response::SharedPtr response);
   void onTimer();
   bool isRunning();
   bool isStartupTimeout();
@@ -63,6 +61,6 @@ private:
   bool isReady();
 };
 
-}  // namespace boot_shutdown_interface
+} // namespace boot_shutdown_interface
 
-#endif  // BOOT_SHUTDOWN_INTERFACE__BOOT_SHUTDOWN_INTERFACE_HPP_
+#endif // BOOT_SHUTDOWN_INTERFACE__BOOT_SHUTDOWN_INTERFACE_HPP_

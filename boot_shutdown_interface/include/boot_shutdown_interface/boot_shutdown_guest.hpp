@@ -25,55 +25,58 @@
 
 #include <string>
 
-namespace boot_shutdown_interface
-{
+namespace boot_shutdown_interface {
 using boot_shutdown_api_msgs::msg::EcuState;
 using boot_shutdown_api_msgs::srv::ExecuteShutdown;
 using boot_shutdown_api_msgs::srv::PrepareShutdown;
 
-class BootShutdownGuest : public rclcpp::Node
-{
+class BootShutdownGuest : public rclcpp::Node {
 public:
   /**
    * @brief Constructor
    * @param [in] node_name Name of the node
    * @param [in] options Options associated with this node
    */
-  explicit BootShutdownGuest(const rclcpp::NodeOptions & options);
+  explicit BootShutdownGuest(const rclcpp::NodeOptions &options);
 
 private:
-  rclcpp::Publisher<EcuState>::SharedPtr pub_ecu_state_;  //!< @brief Publisher to notify ECU state
+  rclcpp::Publisher<EcuState>::SharedPtr
+      pub_ecu_state_; //!< @brief Publisher to notify ECU state
   rclcpp::Service<PrepareShutdown>::SharedPtr
-    srv_prepare_shutdown_;  //!< @brief Service to prepare shutdown
+      srv_prepare_shutdown_; //!< @brief Service to prepare shutdown
   rclcpp::Service<ExecuteShutdown>::SharedPtr
-    srv_execute_shutdown_;              //!< @brief Service to execute shutdown
-  rclcpp::TimerBase::SharedPtr timer_;  //!< @brief Timer to notify ECU state
+      srv_execute_shutdown_;           //!< @brief Service to execute shutdown
+  rclcpp::TimerBase::SharedPtr timer_; //!< @brief Timer to notify ECU state
 
-  std::string ecu_name_;                 //!< @brief Name of ECU
-  unsigned int startup_timeout_;         //!< @brief Timeout time to wait for startup completion
-  unsigned int prepare_shutdown_time_;   //!< @brief Time taken for preparing for shutdown
-  unsigned int execute_shutdown_time_;   //!< @brief Time taken for executing shutdown
-  std::string socket_path_;              //!< @brief Path of UNIX domain socket
-  EcuState ecu_state_;                   //!< @brief Current ECU state
-  rclcpp::Time startup_time_;            //!< @brief Startup time
-  rclcpp::Time preparation_start_time_;  //!< @brief Start time from preparing for shutdown
-  int socket_;                           //!< @brief Socket to communicate with boot/shutdown service
+  std::string ecu_name_; //!< @brief Name of ECU
+  unsigned int
+      startup_timeout_; //!< @brief Timeout time to wait for startup completion
+  unsigned int
+      prepare_shutdown_time_; //!< @brief Time taken for preparing for shutdown
+  unsigned int
+      execute_shutdown_time_; //!< @brief Time taken for executing shutdown
+  std::string socket_path_;   //!< @brief Path of UNIX domain socket
+  EcuState ecu_state_;        //!< @brief Current ECU state
+  rclcpp::Time startup_time_; //!< @brief Startup time
+  rclcpp::Time preparation_start_time_; //!< @brief Start time from preparing
+                                        //!< for shutdown
+  int socket_; //!< @brief Socket to communicate with boot/shutdown service
 
   /**
    * @brief Callback for the service request to prepare for shutdown
    * @param [in] request Service request
    * @param [in] response Service response
    */
-  void onPrepareShutdown(
-    PrepareShutdown::Request::SharedPtr request, PrepareShutdown::Response::SharedPtr response);
+  void onPrepareShutdown(PrepareShutdown::Request::SharedPtr request,
+                         PrepareShutdown::Response::SharedPtr response);
 
   /**
    * @brief Callback for the service request to execute shutdown
    * @param [in] request Service request
    * @param [in] response Service response
    */
-  void onExecuteShutdown(
-    ExecuteShutdown::Request::SharedPtr request, ExecuteShutdown::Response::SharedPtr response);
+  void onExecuteShutdown(ExecuteShutdown::Request::SharedPtr request,
+                         ExecuteShutdown::Response::SharedPtr response);
 
   /**
    * @brief Timer callback to notify ECU state
@@ -115,7 +118,7 @@ private:
    * @param [in] request request to boot/shutdown service
    * @param [out] status status from boot/shutdown service
    */
-  void getStatus(Request request, bool & status);
+  void getStatus(Request request, bool &status);
 
   /**
    * @brief Connect to boot/shutdown service
@@ -134,7 +137,7 @@ private:
    * @brief Receive data from boot/shutdown service
    * @param [out] status status from boot/shutdown service
    */
-  void receiveData(bool & status);
+  void receiveData(bool &status);
 
   /**
    * @brief Close connection with boot/shutdown service
@@ -142,6 +145,6 @@ private:
   void closeConnection();
 };
 
-}  // namespace boot_shutdown_interface
+} // namespace boot_shutdown_interface
 
-#endif  // BOOT_SHUTDOWN_INTERFACE__BOOT_SHUTDOWN_GUEST_HPP_
+#endif // BOOT_SHUTDOWN_INTERFACE__BOOT_SHUTDOWN_GUEST_HPP_

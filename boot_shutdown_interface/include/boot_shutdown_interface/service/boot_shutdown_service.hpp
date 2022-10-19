@@ -19,63 +19,61 @@
 
 #include <mutex>
 
-namespace boot_shutdown_interface
-{
+namespace boot_shutdown_interface {
 
-  class BootShutdownService
-  {
-  public:
-    /**
-     * @brief Constructor
-     * @param[in] socket_path Path of UNIX domain socket
-     */
-    explicit BootShutdownService(const std::string &socket_path);
+class BootShutdownService {
+public:
+  /**
+   * @brief Constructor
+   * @param[in] socket_path Path of UNIX domain socket
+   */
+  explicit BootShutdownService(const std::string &socket_path);
 
-    /**
-     * @brief Initialization
-     * @return true on success, false on error
-     */
-    bool initialize();
+  /**
+   * @brief Initialization
+   * @return true on success, false on error
+   */
+  bool initialize();
 
-    /**
-     * @brief Shutdown
-     */
-    void shutdown();
+  /**
+   * @brief Shutdown
+   */
+  void shutdown();
 
-    /**
-     * @brief Main loop
-     */
-    void run();
+  /**
+   * @brief Main loop
+   */
+  void run();
 
-  protected:
-    /**
-     * @brief Handle messsage
-     * @param[in] buffer pointer to data received
-     */
-    void handleMessage(const char *buffer);
+protected:
+  /**
+   * @brief Handle messsage
+   * @param[in] buffer pointer to data received
+   */
+  void handleMessage(const char *buffer);
 
-    /**
-     * @brief Prepare for shutdown
-     */
-    void prepareShutdown();
+  /**
+   * @brief Prepare for shutdown
+   */
+  void prepareShutdown();
 
-    /**
-     * @brief Execute shutdown
-     */
-    void executeShutdown();
+  /**
+   * @brief Execute shutdown
+   */
+  void executeShutdown();
 
-    /**
-     * @brief Return if ready to execute shutdown or not
-     */
-    void isReadyToShutdown();
+  /**
+   * @brief Return if ready to execute shutdown or not
+   */
+  void isReadyToShutdown();
 
-    std::string socket_path_; //!< @brief Path of UNIX domain socket
-    int port_;                //!< @brief Port number to access l2ping service
-    int socket_;              //!< @brief Socket to communicate with ros node
-    int connection_;          //!< @brief Accepted socket for the incoming connection
-    std::mutex mutex_;        //!< @brief Mutex guard for the flag
-    bool is_ready_;           //!< @brief Ready to execute shutdown
-  };
+  std::string socket_path_; //!< @brief Path of UNIX domain socket
+  int port_;                //!< @brief Port number to access l2ping service
+  int socket_;              //!< @brief Socket to communicate with ros node
+  int connection_;   //!< @brief Accepted socket for the incoming connection
+  std::mutex mutex_; //!< @brief Mutex guard for the flag
+  bool is_ready_;    //!< @brief Ready to execute shutdown
+};
 
 } // namespace boot_shutdown_interface
 
