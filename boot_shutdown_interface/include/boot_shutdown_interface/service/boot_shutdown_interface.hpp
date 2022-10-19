@@ -12,17 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef BOOT_SHUTDOWN_INTERFACE__BOOT_SHUTDOWN_INTERFACE_HPP_
-#define BOOT_SHUTDOWN_INTERFACE__BOOT_SHUTDOWN_INTERFACE_HPP_
+#ifndef BOOT_SHUTDOWN_INTERFACE__SERVICE__BOOT_SHUTDOWN_INTERFACE_HPP_
+#define BOOT_SHUTDOWN_INTERFACE__SERVICE__BOOT_SHUTDOWN_INTERFACE_HPP_
 
-namespace boot_shutdown_interface {
+namespace boot_shutdown_interface
+{
 
-enum Request {
-  NONE = 0,
-  PREPARE_SHUTDOWN,
-  EXECUTE_SHUTDOWN,
-};
+  static constexpr char SOCKET_PATH[] = "/tmp/boot_shutdown";
+
+  enum Request
+  {
+    NONE = 0,
+    PREPARE_SHUTDOWN,
+    EXECUTE_SHUTDOWN,
+    IS_READY_TO_SHUTDOWN,
+  };
 
 } // namespace boot_shutdown_interface
 
-#endif // BOOT_SHUTDOWN_INTERFACE__BOOT_SHUTDOWN_INTERFACE_HPP_
+#endif // BOOT_SHUTDOWN_INTERFACE__SERVICE__BOOT_SHUTDOWN_INTERFACE_HPP_

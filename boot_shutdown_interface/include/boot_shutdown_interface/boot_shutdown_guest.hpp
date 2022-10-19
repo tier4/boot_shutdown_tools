@@ -15,15 +15,13 @@
 #ifndef BOOT_SHUTDOWN_INTERFACE__BOOT_SHUTDOWN_GUEST_HPP_
 #define BOOT_SHUTDOWN_INTERFACE__BOOT_SHUTDOWN_GUEST_HPP_
 
-#include "boot_shutdown_interface/boot_shutdown_interface.hpp"
+#include "boot_shutdown_interface/service/boot_shutdown_interface.hpp"
 
 #include <rclcpp/rclcpp.hpp>
 
 #include <boot_shutdown_api_msgs/msg/ecu_state.hpp>
 #include <boot_shutdown_api_msgs/srv/execute_shutdown.hpp>
 #include <boot_shutdown_api_msgs/srv/prepare_shutdown.hpp>
-
-#include <boost/process.hpp>
 
 #include <string>
 
@@ -55,11 +53,11 @@ private:
   unsigned int startup_timeout_;         //!< @brief Timeout time to wait for startup completion
   unsigned int prepare_shutdown_time_;   //!< @brief Time taken for preparing for shutdown
   unsigned int execute_shutdown_time_;   //!< @brief Time taken for executing shutdown
+  std::string socket_path_;              //!< @brief Path of UNIX domain socket
   EcuState ecu_state_;                   //!< @brief Current ECU state
   rclcpp::Time startup_time_;            //!< @brief Startup time
   rclcpp::Time preparation_start_time_;  //!< @brief Start time from preparing for shutdown
-  boost::process::child preparation_child_;  //!< @brief Child process to prepare for shutdown
-  boost::process::child shutdown_child_;     //!< @brief Child process to execute shutdown
+  int socket_;                           //!< @brief Socket to communicate with boot/shutdown service
 
   /**
    * @brief Callback for the service request to prepare for shutdown
@@ -107,11 +105,41 @@ private:
   bool isReady();
 
   /**
-   * @brief Send request to boot_shutdown_host
-   * @param [in] request request to the host
+   * @brief Send request to boot/shutdown service
+   * @param [in] request request to boot/shutdown service
+   */
+  void sendRequest(Request request);
+
+  /**
+   * @brief Get status from boot/shutdown service
+   * @param [in] request request to boot/shutdown service
+   * @param [out] status status from boot/shutdown service
+   */
+  void getStatus(Request request, bool & status);
+
+  /**
+   * @brief Connect to boot/shutdown service
    * @return true on success, false on error
    */
-  bool sendRequestToHost(Request request);
+  bool connectService();
+
+  /**
+   * @brief Send data to boot/shutdown service
+   * @param [in] request request to boot/shutdown service
+   * @return true on success, false on error
+   */
+  bool sendData(Request request);
+
+  /**
+   * @brief Receive data from boot/shutdown service
+   * @param [out] status status from boot/shutdown service
+   */
+  void receiveData(bool & status);
+
+  /**
+   * @brief Close connection with boot/shutdown service
+   */
+  void closeConnection();
 };
 
 }  // namespace boot_shutdown_interface
