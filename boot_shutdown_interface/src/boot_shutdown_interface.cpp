@@ -14,8 +14,6 @@
 
 #include "boot_shutdown_interface/boot_shutdown_interface.hpp"
 
-#define FMT_HEADER_ONLY
-
 namespace boot_shutdown_interface
 {
 
