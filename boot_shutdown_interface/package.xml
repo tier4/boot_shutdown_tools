@@ -12,7 +12,6 @@
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
   <depend>boot_shutdown_api_msgs</depend>
-  <depend>fmt</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
 

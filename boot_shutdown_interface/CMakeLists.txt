@@ -23,7 +23,7 @@ ament_auto_add_library(boot_shutdown_guest_lib SHARED
   src/boot_shutdown_guest.cpp
 )
 
-target_link_libraries(boot_shutdown_interface ${Boost_LIBRARIES} fmt)
+target_link_libraries(boot_shutdown_interface ${Boost_LIBRARIES})
 target_link_libraries(boot_shutdown_service ${Boost_LIBRARIES})
 target_link_libraries(boot_shutdown_guest_lib ${Boost_LIBRARIES})
 
