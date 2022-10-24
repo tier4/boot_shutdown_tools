@@ -1,0 +1,4 @@
+source;share/boot_shutdown_api_msgs/local_setup.bash
+source;share/boot_shutdown_api_msgs/local_setup.dsv
+source;share/boot_shutdown_api_msgs/local_setup.sh
+source;share/boot_shutdown_api_msgs/local_setup.zsh

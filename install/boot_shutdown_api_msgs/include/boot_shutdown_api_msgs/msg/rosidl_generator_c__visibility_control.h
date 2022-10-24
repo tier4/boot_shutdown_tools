@@ -1,0 +1,1 @@
+/home/ito/boot_shutdown_tools/build/boot_shutdown_api_msgs/rosidl_generator_c/boot_shutdown_api_msgs/msg/rosidl_generator_c__visibility_control.h

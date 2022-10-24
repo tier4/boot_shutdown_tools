@@ -1,0 +1,16 @@
+msg/EcuState.idl
+msg/EcuState.msg
+msg/EcuStateSummary.idl
+msg/EcuStateSummary.msg
+srv/ExecuteShutdown.idl
+srv/ExecuteShutdown.srv
+srv/ExecuteShutdown_Request.msg
+srv/ExecuteShutdown_Response.msg
+srv/PrepareShutdown.idl
+srv/PrepareShutdown.srv
+srv/PrepareShutdown_Request.msg
+srv/PrepareShutdown_Response.msg
+srv/Shutdown.idl
+srv/Shutdown.srv
+srv/Shutdown_Request.msg
+srv/Shutdown_Response.msg

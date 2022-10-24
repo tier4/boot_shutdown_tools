@@ -1,0 +1,1 @@
+/home/ito/boot_shutdown_tools/build/boot_shutdown_api_msgs/rosidl_typesupport_fastrtps_cpp/boot_shutdown_api_msgs/srv/detail/prepare_shutdown__rosidl_typesupport_fastrtps_cpp.hpp

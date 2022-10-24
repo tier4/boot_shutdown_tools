@@ -1,0 +1,1 @@
+/home/ito/boot_shutdown_tools/build/boot_shutdown_api_msgs/rosidl_cmake/rosidl_cmake_export_typesupport_libraries-extras.cmake

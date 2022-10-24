@@ -1,0 +1,1 @@
+ament_cmake_symlink_install_targets("TARGET_FILES" "/home/ito/boot_shutdown_tools/build/boot_shutdown_interface/libboot_shutdown_interface_node.so" "TARGETS" "boot_shutdown_interface_node" "ARCHIVE_DESTINATION" "lib" "LIBRARY_DESTINATION" "lib" "RUNTIME_DESTINATION" "bin")

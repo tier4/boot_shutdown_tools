@@ -1,0 +1,53 @@
+[0.000000] (-) TimerEvent: {}
+[0.000100] (boot_shutdown_api_msgs) JobQueued: {'identifier': 'boot_shutdown_api_msgs', 'dependencies': OrderedDict()}
+[0.000124] (boot_shutdown_interface) JobQueued: {'identifier': 'boot_shutdown_interface', 'dependencies': OrderedDict([('boot_shutdown_api_msgs', '/home/ito/boot_shutdown_tools/install/boot_shutdown_api_msgs')])}
+[0.000147] (boot_shutdown_api_msgs) JobStarted: {'identifier': 'boot_shutdown_api_msgs'}
+[0.013964] (boot_shutdown_api_msgs) JobProgress: {'identifier': 'boot_shutdown_api_msgs', 'progress': 'cmake'}
+[0.014027] (boot_shutdown_api_msgs) Command: {'cmd': ['/usr/bin/cmake', '/home/ito/boot_shutdown_tools/boot_shutdown_api_msgs', '-DCMAKE_BUILD_TYPE=Release', '-DAMENT_CMAKE_SYMLINK_INSTALL=1', '-DCMAKE_INSTALL_PREFIX=/home/ito/boot_shutdown_tools/install/boot_shutdown_api_msgs'], 'cwd': '/home/ito/boot_shutdown_tools/build/boot_shutdown_api_msgs', 'env': OrderedDict([('LESSOPEN', '| /usr/bin/lesspipe %s'), ('LANGUAGE', 'en_US:en'), ('LC_TIME', 'en_US.UTF-8'), ('USER', 'ito'), ('SSH_AGENT_PID', '4124'), ('XDG_SESSION_TYPE', 'x11'), ('LD_LIBRARY_PATH', '/usr/local/libtorch/lib:/opt/ros/galactic/opt/yaml_cpp_vendor/lib:/opt/ros/galactic/opt/rviz_ogre_vendor/lib:/opt/ros/galactic/lib/x86_64-linux-gnu:/opt/ros/galactic/lib:/usr/local/cuda/lib64:'), ('RCUTILS_CONSOLE_OUTPUT_FORMAT', '[{severity} {time}] [{name}] {function_name}(): {message}'), ('SHLVL', '2'), ('CYCLONEDDS_URI', 'file:///opt/autoware/services/cyclonedds-local/cyclonedds-local.xml'), ('HOME', '/home/ito'), ('OLDPWD', '/home/ito/autoware'), ('ASTAH_HOME', '/home/ito/astahsystemsafety'), ('DESKTOP_SESSION', 'ubuntu'), ('GNOME_SHELL_SESSION_MODE', 'ubuntu'), ('GTK_MODULES', 'gail:atk-bridge'), ('ROS_PYTHON_VERSION', '3'), ('LC_MONETARY', 'en_US.UTF-8'), ('MANAGERPID', '3464'), ('DBUS_SESSION_BUS_ADDRESS', 'unix:path=/run/user/1000/bus'), ('COLORTERM', 'truecolor'), ('IM_CONFIG_PHASE', '1'), ('MANDATORY_PATH', '/usr/share/gconf/ubuntu.mandatory.path'), ('ROS_DISTRO', 'galactic'), ('LOGNAME', 'ito'), ('JOURNAL_STREAM', '8:82439'), ('DEFAULTS_PATH', '/usr/share/gconf/ubuntu.default.path'), ('ROS_VERSION', '2'), ('XDG_SESSION_CLASS', 'user'), ('TERM', 'xterm-256color'), ('USERNAME', 'ito'), ('GNOME_DESKTOP_SESSION_ID', 'this-is-deprecated'), ('ROS_LOCALHOST_ONLY', '0'), ('WINDOWPATH', '2'), ('PATH', '/home/ito/.local/bin:/opt/ros/galactic/bin:/usr/local/cuda/bin:/home/ito/.local/bin:/home/ito/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/opt/intel/oneapi/vtune/latest/bin64'), ('INVOCATION_ID', 'b6c636248983482785802064f940d7fe'), ('PAPERSIZE', 'letter'), ('SESSION_MANAGER', 'local/npc1910006-ubuntu02:@/tmp/.ICE-unix/4158,unix/npc1910006-ubuntu02:/tmp/.ICE-unix/4158'), ('GNOME_TERMINAL_SCREEN', '/org/gnome/Terminal/screen/e730e6f8_60c5_41c2_a7cf_e80782ae528d'), ('LC_ADDRESS', 'en_US.UTF-8'), ('XDG_MENU_PREFIX', 'gnome-'), ('XDG_RUNTIME_DIR', '/run/user/1000'), ('DISPLAY', ':1'), ('LANG', 'en_US.UTF-8'), ('LC_TELEPHONE', 'en_US.UTF-8'), ('RMW_IMPLEMENTATION', 'rmw_cyclonedds_cpp'), ('XDG_CURRENT_DESKTOP', 'ubuntu:GNOME'), ('GNOME_TERMINAL_SERVICE', ':1.243'), ('LS_COLORS', 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:'), ('XAUTHORITY', '/run/user/1000/gdm/Xauthority'), ('XDG_SESSION_DESKTOP', 'ubuntu'), ('XMODIFIERS', '@im=ibus'), ('AMENT_PREFIX_PATH', '/opt/ros/galactic'), ('GSETTINGS_SCHEMA_DIR', '/home/ito/data'), ('ROS_DOMAIN_ID', '1'), ('SSH_AUTH_SOCK', '/run/user/1000/keyring/ssh'), ('LC_NAME', 'en_US.UTF-8'), ('SHELL', '/bin/bash'), ('GDMSESSION', 'ubuntu'), ('QT_ACCESSIBILITY', '1'), ('LESSCLOSE', '/usr/bin/lesspipe %s %s'), ('LC_MEASUREMENT', 'en_US.UTF-8'), ('GPG_AGENT_INFO', '/run/user/1000/gnupg/S.gpg-agent:0:1'), ('LC_IDENTIFICATION', 'en_US.UTF-8'), ('QT_IM_MODULE', 'ibus'), ('JAVA_HOME', '/home/ito/jdk8u275-b01/bin'), ('PWD', '/home/ito/boot_shutdown_tools/build/boot_shutdown_api_msgs'), ('RCUTILS_COLORIZED_OUTPUT', '1'), ('VIRTUAL_ENV_DISABLE_PROMPT', '1'), ('XDG_CONFIG_DIRS', '/etc/xdg/xdg-ubuntu:/etc/xdg'), ('XDG_DATA_DIRS', '/usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop'), ('LC_NUMERIC', 'en_US.UTF-8'), ('PYTHONPATH', '/opt/ros/galactic/lib/python3.8/site-packages'), ('CPATH', '/usr/local/include/external:'), ('LC_PAPER', 'en_US.UTF-8'), ('COLCON', '1'), ('VTE_VERSION', '6003'), ('CMAKE_PREFIX_PATH', '/opt/ros/galactic')]), 'shell': False}
+[0.088495] (-) TimerEvent: {}
+[0.124242] (boot_shutdown_api_msgs) StdoutLine: {'line': b'-- The C compiler identification is GNU 9.4.0\n'}
+[0.188680] (-) TimerEvent: {}
+[0.247719] (boot_shutdown_api_msgs) StdoutLine: {'line': b'-- The CXX compiler identification is GNU 9.4.0\n'}
+[0.253238] (boot_shutdown_api_msgs) StdoutLine: {'line': b'-- Check for working C compiler: /usr/bin/cc\n'}
+[0.288783] (-) TimerEvent: {}
+[0.306913] (boot_shutdown_api_msgs) StdoutLine: {'line': b'-- Check for working C compiler: /usr/bin/cc -- works\n'}
+[0.308049] (boot_shutdown_api_msgs) StdoutLine: {'line': b'-- Detecting C compiler ABI info\n'}
+[0.369032] (boot_shutdown_api_msgs) StdoutLine: {'line': b'-- Detecting C compiler ABI info - done\n'}
+[0.382945] (boot_shutdown_api_msgs) StdoutLine: {'line': b'-- Detecting C compile features\n'}
+[0.383458] (boot_shutdown_api_msgs) StdoutLine: {'line': b'-- Detecting C compile features - done\n'}
+[0.386347] (boot_shutdown_api_msgs) StdoutLine: {'line': b'-- Check for working CXX compiler: /usr/bin/c++\n'}
+[0.388880] (-) TimerEvent: {}
+[0.445230] (boot_shutdown_api_msgs) StdoutLine: {'line': b'-- Check for working CXX compiler: /usr/bin/c++ -- works\n'}
+[0.446064] (boot_shutdown_api_msgs) StdoutLine: {'line': b'-- Detecting CXX compiler ABI info\n'}
+[0.489008] (-) TimerEvent: {}
+[0.513538] (boot_shutdown_api_msgs) StdoutLine: {'line': b'-- Detecting CXX compiler ABI info - done\n'}
+[0.529279] (boot_shutdown_api_msgs) StdoutLine: {'line': b'-- Detecting CXX compile features\n'}
+[0.529965] (boot_shutdown_api_msgs) StdoutLine: {'line': b'-- Detecting CXX compile features - done\n'}
+[0.534305] (boot_shutdown_api_msgs) StdoutLine: {'line': b'-- Found ament_cmake_auto: 1.1.5 (/opt/ros/galactic/share/ament_cmake_auto/cmake)\n'}
+[0.572209] (boot_shutdown_api_msgs) StdoutLine: {'line': b'-- Found PythonInterp: /usr/bin/python3 (found suitable version "3.8.10", minimum required is "3") \n'}
+[0.572466] (boot_shutdown_api_msgs) StdoutLine: {'line': b'-- Using PYTHON_EXECUTABLE: /usr/bin/python3\n'}
+[0.589118] (-) TimerEvent: {}
+[0.626403] (boot_shutdown_api_msgs) StdoutLine: {'line': b'-- Override CMake install command with custom implementation using symlinks instead of copying resources\n'}
+[0.689237] (-) TimerEvent: {}
+[0.716089] (boot_shutdown_api_msgs) StdoutLine: {'line': b'-- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c\n'}
+[0.722825] (boot_shutdown_api_msgs) StdoutLine: {'line': b'-- Found rosidl_adapter: 2.2.2 (/opt/ros/galactic/share/rosidl_adapter/cmake)\n'}
+[0.788874] (boot_shutdown_api_msgs) StdoutLine: {'line': b'-- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "1.1.1f")  \n'}
+[0.789295] (-) TimerEvent: {}
+[0.813067] (boot_shutdown_api_msgs) StdoutLine: {'line': b'-- Found FastRTPS: /opt/ros/galactic/include  \n'}
+[0.880445] (boot_shutdown_api_msgs) StdoutLine: {'line': b'-- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp\n'}
+[0.889403] (-) TimerEvent: {}
+[0.941529] (boot_shutdown_api_msgs) StdoutLine: {'line': b'-- Found PythonInterp: /usr/bin/python3 (found version "3.8.10") \n'}
+[0.989518] (-) TimerEvent: {}
+[1.005798] (boot_shutdown_api_msgs) StderrLine: {'line': b'CMake Error at /opt/ros/galactic/share/rosidl_cmake/cmake/rosidl_generate_interfaces.cmake:162 (message):\n'}
+[1.005935] (boot_shutdown_api_msgs) StderrLine: {'line': b"  rosidl_generate_interfaces() the passed dependency 'autoware_adapi_v1_msgs'\n"}
+[1.005992] (boot_shutdown_api_msgs) StderrLine: {'line': b'  has not been found before using find_package()\n'}
+[1.006041] (boot_shutdown_api_msgs) StderrLine: {'line': b'Call Stack (most recent call first):\n'}
+[1.006088] (boot_shutdown_api_msgs) StderrLine: {'line': b'  CMakeLists.txt:17 (rosidl_generate_interfaces)\n'}
+[1.006133] (boot_shutdown_api_msgs) StderrLine: {'line': b'\n'}
+[1.006178] (boot_shutdown_api_msgs) StderrLine: {'line': b'\n'}
+[1.006899] (boot_shutdown_api_msgs) StdoutLine: {'line': b'-- Configuring incomplete, errors occurred!\n'}
+[1.006977] (boot_shutdown_api_msgs) StdoutLine: {'line': b'See also "/home/ito/boot_shutdown_tools/build/boot_shutdown_api_msgs/CMakeFiles/CMakeOutput.log".\n'}
+[1.012109] (boot_shutdown_api_msgs) CommandEnded: {'returncode': 1}
+[1.038507] (boot_shutdown_api_msgs) JobEnded: {'identifier': 'boot_shutdown_api_msgs', 'rc': 1}
+[1.049821] (boot_shutdown_interface) JobSkipped: {'identifier': 'boot_shutdown_interface'}
+[1.050185] (-) EventReactorShutdown: {}

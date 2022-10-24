@@ -1,0 +1,15 @@
+// generated from rosidl_adapter/resource/msg.idl.em
+// with input from boot_shutdown_api_msgs/msg/EcuStateSummary.msg
+// generated code does not contain a copyright notice
+
+#include "boot_shutdown_api_msgs/msg/EcuState.idl"
+
+module boot_shutdown_api_msgs {
+  module msg {
+    struct EcuStateSummary {
+      boot_shutdown_api_msgs::msg::EcuState summary;
+
+      sequence<boot_shutdown_api_msgs::msg::EcuState> details;
+    };
+  };
+};

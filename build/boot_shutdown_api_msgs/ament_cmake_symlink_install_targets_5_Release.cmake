@@ -1,0 +1,1 @@
+ament_cmake_symlink_install_targets("TARGET_FILES" "/home/ito/boot_shutdown_tools/build/boot_shutdown_api_msgs/rosidl_generator_py/boot_shutdown_api_msgs/libboot_shutdown_api_msgs__python.so" "TARGETS" "boot_shutdown_api_msgs__python" "ARCHIVE_DESTINATION" "lib" "LIBRARY_DESTINATION" "lib" "RUNTIME_DESTINATION" "bin")

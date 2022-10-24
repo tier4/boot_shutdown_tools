@@ -1,0 +1,10 @@
+{
+  "package_name": "boot_shutdown_api_msgs",
+  "non_idl_tuples": [
+    "/home/ito/boot_shutdown_tools/boot_shutdown_api_msgs:msg/EcuState.msg",
+    "/home/ito/boot_shutdown_tools/boot_shutdown_api_msgs:msg/EcuStateSummary.msg",
+    "/home/ito/boot_shutdown_tools/boot_shutdown_api_msgs:srv/ExecuteShutdown.srv",
+    "/home/ito/boot_shutdown_tools/boot_shutdown_api_msgs:srv/PrepareShutdown.srv",
+    "/home/ito/boot_shutdown_tools/boot_shutdown_api_msgs:srv/Shutdown.srv"
+  ]
+}
