@@ -1,4 +1,0 @@
-source;share/boot_shutdown_interface/local_setup.bash
-source;share/boot_shutdown_interface/local_setup.dsv
-source;share/boot_shutdown_interface/local_setup.sh
-source;share/boot_shutdown_interface/local_setup.zsh

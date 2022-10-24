@@ -1,1 +1,0 @@
-/home/ito/boot_shutdown_tools/build/boot_shutdown_api_msgs/rosidl_cmake/srv/ExecuteShutdown_Response.msg

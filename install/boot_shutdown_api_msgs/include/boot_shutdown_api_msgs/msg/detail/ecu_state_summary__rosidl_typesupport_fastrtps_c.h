@@ -1,1 +1,0 @@
-/home/ito/boot_shutdown_tools/build/boot_shutdown_api_msgs/rosidl_typesupport_fastrtps_c/boot_shutdown_api_msgs/msg/detail/ecu_state_summary__rosidl_typesupport_fastrtps_c.h

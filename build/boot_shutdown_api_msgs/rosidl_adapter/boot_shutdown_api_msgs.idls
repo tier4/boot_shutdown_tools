@@ -1,5 +1,0 @@
-/home/ito/boot_shutdown_tools/build/boot_shutdown_api_msgs/rosidl_adapter/boot_shutdown_api_msgs:msg/EcuState.idl
-/home/ito/boot_shutdown_tools/build/boot_shutdown_api_msgs/rosidl_adapter/boot_shutdown_api_msgs:msg/EcuStateSummary.idl
-/home/ito/boot_shutdown_tools/build/boot_shutdown_api_msgs/rosidl_adapter/boot_shutdown_api_msgs:srv/ExecuteShutdown.idl
-/home/ito/boot_shutdown_tools/build/boot_shutdown_api_msgs/rosidl_adapter/boot_shutdown_api_msgs:srv/PrepareShutdown.idl
-/home/ito/boot_shutdown_tools/build/boot_shutdown_api_msgs/rosidl_adapter/boot_shutdown_api_msgs:srv/Shutdown.idl
