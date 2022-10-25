@@ -11,6 +11,7 @@
 
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
+  <depend>autoware_auto_system_msgs</depend>
   <depend>boot_shutdown_api_msgs</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
