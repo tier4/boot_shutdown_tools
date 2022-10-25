@@ -15,4 +15,4 @@ repositories:
   boot_shutdown_tools:
     type: git
     url: https://github.com/tier4/boot_shutdown_tools.git
-    version: feature/with_docker
+    version: feature/run_with_daemon_and_docker
