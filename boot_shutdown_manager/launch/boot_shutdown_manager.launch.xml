@@ -1,6 +1,6 @@
 <launch>
   <arg name="boot_shutdown_manager_param_path" default="$(find-pkg-share boot_shutdown_manager)/config/boot_shutdown_manager.param.yaml"/>
-  <arg name="output/ecu_state_summary" default="/pilot_auto/api/ecu_state"/>
+  <arg name="output/ecu_state_summary" default="/pilot_auto/api/ecu/state"/>
   <arg name="service/shutdown" default="/pilot_auto/api/ecu/shutdown"/>
 
   <node pkg="boot_shutdown_manager" exec="boot_shutdown_manager" name="boot_shutdown_manager" output="screen">
