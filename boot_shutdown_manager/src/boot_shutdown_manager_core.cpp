@@ -147,6 +147,13 @@ void BootShutdownManager::onTimer()
         summary.state = EcuState::STARTUP_TIMEOUT;
       }
       break;
+    case EcuState::STARTUP_TIMEOUT:
+      if (isRunning()) {
+        summary.state = EcuState::RUNNING;
+        last_transition_stamp_ = now();
+        RCLCPP_INFO(get_logger(), "state transioned : -> RUNNING");
+      }
+      break;
     case EcuState::RUNNING:
       break;
     case EcuState::SHUTDOWN_PREPARING:
@@ -157,6 +164,13 @@ void BootShutdownManager::onTimer()
       } else if (
         (last_transition_stamp_ - now()) > rclcpp::Duration::from_seconds(preparation_timeout_)) {
         summary.state = EcuState::SHUTDOWN_TIMEOUT;
+      }
+      break;
+    case EcuState::SHUTDOWN_TIMEOUT:
+      if (isReady()) {
+        summary.state = EcuState::SHUTDOWN_READY;
+        last_transition_stamp_ = now();
+        RCLCPP_INFO(get_logger(), "state transioned : -> SHUTDOWN_READY");
       }
       break;
     case EcuState::SHUTDOWN_READY:
