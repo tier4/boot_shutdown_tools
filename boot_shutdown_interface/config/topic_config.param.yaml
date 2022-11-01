@@ -1,7 +1,7 @@
 /**:
   ros__parameters:
     topic_config:
-      name: ""
-      type: ""
+      name: "/autoware/state"
+      type: "autoware_auto_system_msgs/msg/AutowareState"
       transient_local: False
       best_effort: False
