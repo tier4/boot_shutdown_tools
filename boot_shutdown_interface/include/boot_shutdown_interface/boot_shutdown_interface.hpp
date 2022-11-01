@@ -54,6 +54,7 @@ private:
   boost::process::child preparation_child_;
   boost::process::child shutdown_child_;
 
+  void createTopicChecker();
   void onPrepareShutdown(
     PrepareShutdown::Request::SharedPtr request, PrepareShutdown::Response::SharedPtr response);
   void onExecuteShutdown(

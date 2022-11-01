@@ -47,6 +47,19 @@ BootShutdownInterface::BootShutdownInterface(const rclcpp::NodeOptions & options
   pub_ecu_state_ =
     create_publisher<EcuState>("~/output/ecu_state", rclcpp::QoS{1});
 
+  try {
+    createTopicChecker();
+  } catch (const std::exception & e) {
+    RCLCPP_INFO(get_logger(), "topic config is not set, set ecu state to running, ERROR: %s", e.what());
+    ecu_state_.state = EcuState::RUNNING;
+  }
+
+  timer_ = rclcpp::create_timer(
+    this, get_clock(), 1s, std::bind(&BootShutdownInterface::onTimer, this));
+}
+
+void BootShutdownInterface::createTopicChecker()
+{
   auto qos = rclcpp::QoS{1};
   if (declare_parameter(
       "topic_config.transient_local",
@@ -61,21 +74,10 @@ BootShutdownInterface::BootShutdownInterface(const rclcpp::NodeOptions & options
     qos.best_effort();
   }
 
-  std::string topic_name = declare_parameter("topic_config.name", rclcpp::PARAMETER_STRING).get<std::string>();
-  if (topic_name.empty()){
-    RCLCPP_INFO(get_logger(), "topic config name is empty, set ecu state to running");
-    if (ecu_state_.state == EcuState::STARTUP) {
-      ecu_state_.state = EcuState::RUNNING;
-    }
-  } else {
-    sub_topic_ = create_generic_subscription(
-      topic_name,
-      declare_parameter("topic_config.type", rclcpp::PARAMETER_STRING).get<std::string>(),
-      qos, std::bind(&BootShutdownInterface::onTopic, this, std::placeholders::_1));
-  }
-
-  timer_ = rclcpp::create_timer(
-    this, get_clock(), 1s, std::bind(&BootShutdownInterface::onTimer, this));
+  sub_topic_ = create_generic_subscription(
+    declare_parameter("topic_config.name", rclcpp::PARAMETER_STRING).get<std::string>(),
+    declare_parameter("topic_config.type", rclcpp::PARAMETER_STRING).get<std::string>(),
+    qos, std::bind(&BootShutdownInterface::onTopic, this, std::placeholders::_1));
 }
 
 void BootShutdownInterface::onPrepareShutdown(
