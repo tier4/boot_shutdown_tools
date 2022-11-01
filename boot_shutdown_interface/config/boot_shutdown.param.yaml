@@ -3,3 +3,9 @@
     startup_timeout: 180
     prepare_shutdown_time: 1
     execute_shutdown_time: 13
+
+    topic_config:
+      name: "/autoware/state"
+      type: "autoware_auto_system_msgs/msg/AutowareState"
+      transient_local: False
+      best_effort: False
