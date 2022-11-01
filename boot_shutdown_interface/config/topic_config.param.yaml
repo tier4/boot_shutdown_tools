@@ -1,0 +1,7 @@
+/**:
+  ros__parameters:
+    topic_config:
+      name: ""
+      type: ""
+      transient_local: False
+      best_effort: False
