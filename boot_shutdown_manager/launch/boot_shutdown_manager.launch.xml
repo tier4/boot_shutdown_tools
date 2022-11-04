@@ -4,9 +4,6 @@
   <arg name="service/shutdown" default="/pilot_auto/api/ecu/shutdown"/>
 
   <node pkg="boot_shutdown_manager" exec="boot_shutdown_manager" name="boot_shutdown_manager" output="screen">
-    <param name="update_rate" value="1.0"/>
-    <param name="startup_timeout" value="300.0"/>
-    <param name="preparation_timeout" value="180.0"/>
     <remap from="~/output/ecu_state_summary" to="$(var output/ecu_state_summary)"/>
     <remap from="~/service/shutdown" to="$(var service/shutdown)"/>
     <param from="$(var boot_shutdown_manager_param_path)"/>
