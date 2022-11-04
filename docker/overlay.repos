@@ -15,4 +15,4 @@ repositories:
   boot_shutdown_tools:
     type: git
     url: https://github.com/tier4/boot_shutdown_tools.git
-    version: feature/design_changes
+    version: main
