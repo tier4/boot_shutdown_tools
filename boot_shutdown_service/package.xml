@@ -1,20 +1,15 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>boot_shutdown_interface</name>
+  <name>boot_shutdown_service</name>
   <version>0.1.0</version>
-  <description>The boot_shutdown_interface package</description>
+  <description>The boot_shutdown_service package</description>
   <maintainer email="shinnosuke.hirakawa@tier4.jp">Shinnosuke Hirakawa</maintainer>
   <maintainer email="fumihito.ito@tier4.jp">Fumihito Ito</maintainer>
 
   <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
-
-  <depend>boot_shutdown_api_msgs</depend>
-  <depend>boot_shutdown_service</depend>
-  <depend>rclcpp</depend>
-  <depend>rclcpp_components</depend>
 
   <test_depend>ament_lint_auto</test_depend>
 
