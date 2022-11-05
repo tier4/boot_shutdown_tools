@@ -1,5 +1,5 @@
 <launch>
-  <arg name="ecu_name" default="ecu"/>
+  <arg name="ecu_name" default="$(env HOSTNAME default)"/>
   <arg name="boot_shutdown_param_path" default="$(find-pkg-share boot_shutdown_interface)/config/boot_shutdown.param.yaml"/>
 
   <group>

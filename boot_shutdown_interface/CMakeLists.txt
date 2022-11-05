@@ -3,7 +3,7 @@ project(boot_shutdown_interface)
 
 find_package(ament_cmake_auto REQUIRED)
 find_package(Boost REQUIRED COMPONENTS
-  filesystem
+  serialization
 )
 
 ament_auto_find_build_dependencies()
@@ -11,6 +11,8 @@ ament_auto_find_build_dependencies()
 ament_auto_add_library(boot_shutdown_interface_node SHARED
   src/boot_shutdown_interface.cpp
 )
+
+target_link_libraries(boot_shutdown_interface_node ${Boost_LIBRARIES})
 
 rclcpp_components_register_node(boot_shutdown_interface_node
   PLUGIN "boot_shutdown_interface::BootShutdownInterface"
