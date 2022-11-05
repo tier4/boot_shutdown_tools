@@ -15,6 +15,9 @@
 ---
 /**:
   ros__parameters:
+    update_rate: 1.0
+    startup_timeout: 60.0
+    preparation_timeout: 10.0
     managed_ecu:
       autoware_ecu:
         state: /autoware_ecu/get/ecu_state
