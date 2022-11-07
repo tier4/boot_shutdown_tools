@@ -100,6 +100,9 @@ BootShutdownManager::BootShutdownManager()
     }
     ecu_client_map_.insert({ecu_name, client});
 
+    cli_webauto_ = proxy.create_client<std_srvs::srv::SetBool>(
+        "/webauto/shutdown", rmw_qos_profile_services_default, callback_group_);
+
     RCLCPP_INFO(
       get_logger(),
       fmt::format("start monitoring : {}", ecu_name + (skip_shutdown ? "*" : "")).c_str());
@@ -122,6 +125,15 @@ void BootShutdownManager::onShutdownService(
     auto [status, resp] = client->cli_prepare->call(req);
     if (!tier4_api_utils::is_success(status)) {
       RCLCPP_WARN(get_logger(), "[%s] PrepareShutdown service call faild.", ecu_name.c_str());
+    }
+  }
+
+  {
+    auto req = std::make_shared<std_srvs::srv::SetBool::Request>();
+    req->data = true;
+    auto [status, resp] = cli_webauto_->call(req);
+    if (!tier4_api_utils::is_success(status)) {
+      RCLCPP_WARN(get_logger(), "webauto shutdown service call faild.");
     }
   }
 

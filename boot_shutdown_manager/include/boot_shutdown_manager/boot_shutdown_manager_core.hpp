@@ -16,6 +16,7 @@
 #define BOOT_SHUTDOWN_MANAGER__BOOT_SHUTDOWN_MANAGER_HPP_
 
 #include <rclcpp/rclcpp.hpp>
+#include <std_srvs/srv/set_bool.hpp>
 #include <tier4_api_utils/tier4_api_utils.hpp>
 
 #include <boot_shutdown_api_msgs/msg/ecu_state.hpp>
@@ -49,6 +50,8 @@ public:
 private:
   rclcpp::Publisher<EcuStateSummary>::SharedPtr pub_ecu_state_summary_;
   tier4_api_utils::Service<Shutdown>::SharedPtr srv_shutdown;
+  tier4_api_utils::Client<std_srvs::srv::SetBool>::SharedPtr cli_webauto_;
+
   rclcpp::TimerBase::SharedPtr timer_;
 
   rclcpp::CallbackGroup::SharedPtr callback_group_;
