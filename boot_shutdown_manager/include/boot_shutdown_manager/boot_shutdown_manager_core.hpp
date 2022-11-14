@@ -17,7 +17,6 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <std_srvs/srv/set_bool.hpp>
-#include <tier4_api_utils/tier4_api_utils.hpp>
 
 #include <boot_shutdown_api_msgs/msg/ecu_state.hpp>
 #include <boot_shutdown_api_msgs/msg/ecu_state_summary.hpp>
@@ -37,8 +36,8 @@ struct EcuClient
 {
   EcuState::SharedPtr ecu_state;
   rclcpp::Subscription<EcuState>::SharedPtr sub_ecu_state;
-  tier4_api_utils::Client<ExecuteShutdown>::SharedPtr cli_execute;
-  tier4_api_utils::Client<PrepareShutdown>::SharedPtr cli_prepare;
+  rclcpp::Client<ExecuteShutdown>::SharedPtr cli_execute;
+  rclcpp::Client<PrepareShutdown>::SharedPtr cli_prepare;
   bool skip_shutdown;
 };
 
@@ -49,8 +48,8 @@ public:
 
 private:
   rclcpp::Publisher<EcuStateSummary>::SharedPtr pub_ecu_state_summary_;
-  tier4_api_utils::Service<Shutdown>::SharedPtr srv_shutdown;
-  tier4_api_utils::Client<std_srvs::srv::SetBool>::SharedPtr cli_webauto_;
+  rclcpp::Service<Shutdown>::SharedPtr srv_shutdown;
+  rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr cli_webauto_;
 
   rclcpp::TimerBase::SharedPtr timer_;
 

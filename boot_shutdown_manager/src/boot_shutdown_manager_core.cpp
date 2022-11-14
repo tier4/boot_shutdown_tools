@@ -29,6 +29,23 @@ std::vector<std::string> split(const std::string & str, const char delim)
   }
   return elems;
 }
+
+template <typename ServiceT> typename ServiceT::Response::SharedPtr call(
+  const std::shared_ptr<rclcpp::Client<ServiceT>> client,
+  const typename ServiceT::Request::SharedPtr & request,
+  const std::chrono::nanoseconds & timeout = std::chrono::seconds(2))
+{
+  if (!client->service_is_ready()) {
+    return nullptr;
+  }
+
+  auto future = client->async_send_request(request);
+  if (future.wait_for(timeout) != std::future_status::ready) {
+    return nullptr;
+  }
+  return future.get();
+}
+
 }  // namespace
 
 namespace boot_shutdown_manager
@@ -41,7 +58,6 @@ BootShutdownManager::BootShutdownManager()
 {
   using std::placeholders::_1;
   using std::placeholders::_2;
-  tier4_api_utils::ServiceProxyNodeInterface proxy(this);
 
   get_parameter_or("update_rate", update_rate_, 1.0);
   get_parameter_or("startup_timeout", startup_timeout_, 300.0);
@@ -54,7 +70,7 @@ BootShutdownManager::BootShutdownManager()
 
   pub_ecu_state_summary_ =
     create_publisher<EcuStateSummary>("~/output/ecu_state_summary", rclcpp::QoS{1});
-  srv_shutdown = proxy.create_service<Shutdown>(
+  srv_shutdown = create_service<Shutdown>(
     "~/service/shutdown", std::bind(&BootShutdownManager::onShutdownService, this, _1, _2),
     rmw_qos_profile_default, callback_group_);
 
@@ -90,9 +106,9 @@ BootShutdownManager::BootShutdownManager()
     auto client = std::make_shared<EcuClient>();
     {
       client->skip_shutdown = skip_shutdown;
-      client->cli_execute = proxy.create_client<ExecuteShutdown>(
+      client->cli_execute = create_client<ExecuteShutdown>(
         execute_service_name, rmw_qos_profile_services_default, callback_group_);
-      client->cli_prepare = proxy.create_client<PrepareShutdown>(
+      client->cli_prepare = create_client<PrepareShutdown>(
         prepare_service_name, rmw_qos_profile_services_default);
       client->sub_ecu_state = create_subscription<EcuState>(
         state_topic_name, rclcpp::QoS{1},
@@ -100,7 +116,7 @@ BootShutdownManager::BootShutdownManager()
     }
     ecu_client_map_.insert({ecu_name, client});
 
-    cli_webauto_ = proxy.create_client<std_srvs::srv::SetBool>(
+    cli_webauto_ = create_client<std_srvs::srv::SetBool>(
         "/webauto/shutdown", rmw_qos_profile_services_default, callback_group_);
 
     RCLCPP_INFO(
@@ -122,8 +138,8 @@ void BootShutdownManager::onShutdownService(
     if (client->skip_shutdown) {
       continue;
     }
-    auto [status, resp] = client->cli_prepare->call(req);
-    if (!tier4_api_utils::is_success(status)) {
+    auto resp = call<PrepareShutdown>(client->cli_prepare, req);
+    if (!resp) {
       RCLCPP_WARN(get_logger(), "[%s] PrepareShutdown service call faild.", ecu_name.c_str());
     }
   }
@@ -131,8 +147,8 @@ void BootShutdownManager::onShutdownService(
   {
     auto req = std::make_shared<std_srvs::srv::SetBool::Request>();
     req->data = true;
-    auto [status, resp] = cli_webauto_->call(req);
-    if (!tier4_api_utils::is_success(status)) {
+    auto resp = call<std_srvs::srv::SetBool>(cli_webauto_, req);
+    if (!resp) {
       RCLCPP_WARN(get_logger(), "webauto shutdown service call faild.");
     }
   }
@@ -237,9 +253,9 @@ void BootShutdownManager::executeShutdown()
     if (client->skip_shutdown) {
       continue;
     }
-    auto [status, resp] = client->cli_execute->call(req);
-    if (!tier4_api_utils::is_success(status)) {
-      RCLCPP_WARN(get_logger(), "[%s] ExecuteShutdown service call faild.", ecu_name.c_str());
+    auto resp = call<ExecuteShutdown>(client->cli_execute, req);
+    if (!resp) {
+      RCLCPP_WARN(get_logger(), "[%s] PrepareShutdown service call faild.", ecu_name.c_str());
     }
     rclcpp::Time power_off_time = resp->power_off_time;
     if (latest_power_off_time < power_off_time) {
