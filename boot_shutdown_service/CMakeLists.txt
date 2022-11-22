@@ -1,19 +1,9 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.10.2)
 project(boot_shutdown_service)
 
-find_package(ament_cmake_auto REQUIRED)
-find_package(Boost REQUIRED COMPONENTS
-  serialization
-  system
-)
-
-ament_auto_find_build_dependencies()
-
-ament_auto_add_executable(boot_shutdown_service
-  src/boot_shutdown_main.cpp
-  src/boot_shutdown_service.cpp
-)
-
-target_link_libraries(boot_shutdown_service ${Boost_LIBRARIES} pthread)
-
-ament_auto_package()
+find_program(ROS2 "ros2")
+if (ROS2)
+ include(CMakeLists.ros2)
+else()
+ include(CMakeLists.noros2)
+endif()
