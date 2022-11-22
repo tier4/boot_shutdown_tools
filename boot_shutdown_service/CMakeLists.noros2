@@ -18,7 +18,5 @@ include_directories(include)
 target_link_libraries(boot_shutdown_service ${Boost_LIBRARIES} pthread)
 
 install(TARGETS ${PROJECT_NAME}
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
