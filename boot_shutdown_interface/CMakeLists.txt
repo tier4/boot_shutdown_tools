@@ -12,7 +12,10 @@ ament_auto_add_library(boot_shutdown_interface_node SHARED
   src/boot_shutdown_interface.cpp
 )
 
-target_link_libraries(boot_shutdown_interface_node ${Boost_LIBRARIES})
+target_link_libraries(boot_shutdown_interface_node
+  Boost::serialization
+  boot_shutdown_service::boot_shutdown_service
+)
 
 rclcpp_components_register_node(boot_shutdown_interface_node
   PLUGIN "boot_shutdown_interface::BootShutdownInterface"
