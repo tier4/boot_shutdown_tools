@@ -1,10 +1,9 @@
 ARG OVERLAY_WS=/opt/ros/overlay_ws
-ARG L4T_RELEASE=32
-ARG L4T_REVISION_MAJOR=6
-ARG L4T_REVISION_MINOR=1
-ARG L4T_VERSION=$L4T_RELEASE.$L4T_REVISION_MAJOR.$L4T_REVISION_MINOR
+ARG BASE_REPOSITORY=dustynv/ros
+ARG BASE_TAG=galactic-ros-base-l4t-r32.6.1
+ARG BASE_IMAGE=$BASE_REPOSITORY:$BASE_TAG
 
-FROM dustynv/ros:galactic-ros-base-l4t-r$L4T_VERSION AS base
+FROM $BASE_IMAGE AS base
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -12,9 +11,6 @@ RUN apt-get update \
          libfmt-dev \
          libboost-dev \
     && rm -rf /var/lib/apt/list/*
-
-
-FROM base AS builder
 
 ARG OVERLAY_WS
 WORKDIR $OVERLAY_WS/src
@@ -27,7 +23,7 @@ WORKDIR $OVERLAY_WS
 
 RUN . /opt/ros/$ROS_DISTRO/install/setup.sh && \
     colcon build \
-        --cmake-args -DCMAKE_BUILD_TYPE=Release --packages-up-to boot_shutdown_interface
+        --cmake-args -DCMAKE_BUILD_TYPE=Release --merge-install --packages-up-to boot_shutdown_interface
 
 ENV OVERLAY_WS=${OVERLAY_WS}
 
