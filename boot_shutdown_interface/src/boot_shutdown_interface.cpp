@@ -98,9 +98,10 @@ void BootShutdownInterface::onPrepareShutdown(
   ecu_state_.state = EcuState::SHUTDOWN_PREPARING;
   prepare_shutdown_start_time_ = get_clock()->now();
 
-  response->status.success = true;
-  response->power_off_time = prepare_shutdown_start_time_ +
+  ecu_state_.power_off_time = prepare_shutdown_start_time_ +
                              rclcpp::Duration(prepare_shutdown_time_ + execute_shutdown_time_, 0);
+  response->status.success = true;
+  response->power_off_time = ecu_state_.power_off_time;
 }
 
 void BootShutdownInterface::onExecuteShutdown(
@@ -110,9 +111,8 @@ void BootShutdownInterface::onExecuteShutdown(
 
   sendExecuteShutdownRequest();
 
-  ecu_state_.power_off_time = get_clock()->now() + rclcpp::Duration(execute_shutdown_time_, 0);
   response->status.success = true;
-  response->power_off_time = ecu_state_.power_off_time;
+  response->power_off_time = get_clock()->now() + rclcpp::Duration(execute_shutdown_time_, 0);
 }
 
 void BootShutdownInterface::onTopic(
