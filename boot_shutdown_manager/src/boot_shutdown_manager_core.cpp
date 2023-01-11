@@ -30,7 +30,8 @@ std::vector<std::string> split(const std::string & str, const char delim)
   return elems;
 }
 
-template <typename ServiceT> typename ServiceT::Response::SharedPtr call(
+template <typename ServiceT>
+typename ServiceT::Response::SharedPtr call(
   const std::shared_ptr<rclcpp::Client<ServiceT>> client,
   const typename ServiceT::Request::SharedPtr & request,
   const std::chrono::nanoseconds & timeout = std::chrono::seconds(2))
@@ -108,8 +109,8 @@ BootShutdownManager::BootShutdownManager()
       client->skip_shutdown = skip_shutdown;
       client->cli_execute = create_client<ExecuteShutdown>(
         execute_service_name, rmw_qos_profile_services_default, callback_group_);
-      client->cli_prepare = create_client<PrepareShutdown>(
-        prepare_service_name, rmw_qos_profile_services_default);
+      client->cli_prepare =
+        create_client<PrepareShutdown>(prepare_service_name, rmw_qos_profile_services_default);
       client->sub_ecu_state = create_subscription<EcuState>(
         state_topic_name, rclcpp::QoS{1},
         [this, client](const EcuState::SharedPtr msg) { client->ecu_state = msg; });
@@ -117,7 +118,7 @@ BootShutdownManager::BootShutdownManager()
     ecu_client_map_.insert({ecu_name, client});
 
     cli_webauto_ = create_client<std_srvs::srv::SetBool>(
-        "/webauto/shutdown", rmw_qos_profile_services_default, callback_group_);
+      "/webauto/shutdown", rmw_qos_profile_services_default, callback_group_);
 
     RCLCPP_INFO(
       get_logger(),
@@ -164,50 +165,42 @@ void BootShutdownManager::onTimer()
 {
   // Update summary
   auto & summary = ecu_state_summary_.summary;
-  switch (summary.state) {
-    case EcuState::STARTUP:
-      if (isRunning()) {
-        summary.state = EcuState::RUNNING;
-        last_transition_stamp_ = now();
-        RCLCPP_INFO(get_logger(), "state transioned : -> RUNNING");
-      } else if (
-        (now() - last_transition_stamp_) > rclcpp::Duration::from_seconds(startup_timeout_)) {
-        summary.state = EcuState::STARTUP_TIMEOUT;
+
+  if (summary.state == EcuState::STARTUP || summary.state == EcuState::STARTUP_TIMEOUT) {
+    if (isRunning()) {
+      summary.state = EcuState::RUNNING;
+      last_transition_stamp_ = now();
+      RCLCPP_INFO(get_logger(), "state transioned : -> RUNNING");
+    } else if (
+      (now() - last_transition_stamp_) > rclcpp::Duration::from_seconds(startup_timeout_)) {
+      summary.state = EcuState::STARTUP_TIMEOUT;
+    }
+  } else if (
+    summary.state == EcuState::SHUTDOWN_PREPARING || summary.state == EcuState::SHUTDOWN_TIMEOUT) {
+    if (isReady()) {
+      summary.state = EcuState::SHUTDOWN_READY;
+
+      rclcpp::Time last_power_off_time = now();
+      for (auto & [ecu_name, client] : ecu_client_map_) {
+        if (client->skip_shutdown) {
+          continue;
+        }
+        rclcpp::Time power_off_time = client->ecu_state->power_off_time;
+        if (last_power_off_time < power_off_time) {
+          last_power_off_time = power_off_time;
+        }
       }
-      break;
-    case EcuState::STARTUP_TIMEOUT:
-      if (isRunning()) {
-        summary.state = EcuState::RUNNING;
-        last_transition_stamp_ = now();
-        RCLCPP_INFO(get_logger(), "state transioned : -> RUNNING");
-      }
-      break;
-    case EcuState::RUNNING:
-      break;
-    case EcuState::SHUTDOWN_PREPARING:
-      if (isReady()) {
-        summary.state = EcuState::SHUTDOWN_READY;
-        last_transition_stamp_ = now();
-        RCLCPP_INFO(get_logger(), "state transioned : -> SHUTDOWN_READY");
-      } else if (
-        (now() - last_transition_stamp_) > rclcpp::Duration::from_seconds(preparation_timeout_)) {
-        summary.state = EcuState::SHUTDOWN_TIMEOUT;
-      }
-      break;
-    case EcuState::SHUTDOWN_TIMEOUT:
-      if (isReady()) {
-        summary.state = EcuState::SHUTDOWN_READY;
-        last_transition_stamp_ = now();
-        RCLCPP_INFO(get_logger(), "state transioned : -> SHUTDOWN_READY");
-      }
-      break;
-    case EcuState::SHUTDOWN_READY:
-      if (!is_shutting_down) {
-        executeShutdown();
-      }
-      break;
-    default:
-      break;
+      summary.power_off_time = last_power_off_time;
+      last_transition_stamp_ = now();
+      RCLCPP_INFO(get_logger(), "state transioned : -> SHUTDOWN_READY");
+    } else if (
+      (now() - last_transition_stamp_) > rclcpp::Duration::from_seconds(preparation_timeout_)) {
+      summary.state = EcuState::SHUTDOWN_TIMEOUT;
+    }
+  } else if (summary.state == EcuState::SHUTDOWN_READY) {
+    if (!is_shutting_down) {
+      executeShutdown();
+    }
   }
 
   // Update detail
