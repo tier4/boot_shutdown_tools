@@ -180,7 +180,7 @@ void BootShutdownManager::onTimer()
     if (isReady()) {
       summary.state = EcuState::SHUTDOWN_READY;
 
-      rclcpp::Time last_power_off_time(0);
+      rclcpp::Time last_power_off_time = now();
       for (auto & [ecu_name, client] : ecu_client_map_) {
         if (client->skip_shutdown) {
           continue;
