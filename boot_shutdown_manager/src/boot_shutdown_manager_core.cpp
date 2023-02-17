@@ -116,6 +116,7 @@ BootShutdownManager::BootShutdownManager()
         [this, client](const EcuState::SharedPtr msg) { client->ecu_state = msg; });
       client->ecu_state = std::make_shared<EcuState>();
       client->ecu_state->state = EcuState::UNKNOWN;
+      client->ecu_state->name = ecu_name;
     }
     ecu_client_map_.insert({ecu_name, client});
 
