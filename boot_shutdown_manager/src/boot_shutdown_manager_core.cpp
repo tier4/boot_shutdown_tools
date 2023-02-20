@@ -114,6 +114,9 @@ BootShutdownManager::BootShutdownManager()
       client->sub_ecu_state = create_subscription<EcuState>(
         state_topic_name, rclcpp::QoS{1},
         [this, client](const EcuState::SharedPtr msg) { client->ecu_state = msg; });
+      client->ecu_state = std::make_shared<EcuState>();
+      client->ecu_state->state = EcuState::UNKNOWN;
+      client->ecu_state->name = ecu_name;
     }
     ecu_client_map_.insert({ecu_name, client});
 
@@ -206,9 +209,7 @@ void BootShutdownManager::onTimer()
   // Update detail
   ecu_state_summary_.details.clear();
   for (auto & [ecu_name, client] : ecu_client_map_) {
-    if (client->ecu_state) {
-      ecu_state_summary_.details.push_back(*client->ecu_state);
-    }
+    ecu_state_summary_.details.push_back(*client->ecu_state);
   }
 
   pub_ecu_state_summary_->publish(ecu_state_summary_);
@@ -217,7 +218,7 @@ void BootShutdownManager::onTimer()
 bool BootShutdownManager::isRunning() const
 {
   for (const auto & [ecu_name, client] : ecu_client_map_) {
-    if (!client->ecu_state || client->ecu_state->state != EcuState::RUNNING) {
+    if (client->ecu_state->state != EcuState::RUNNING) {
       return false;
     }
   }
@@ -230,7 +231,7 @@ bool BootShutdownManager::isReady() const
     if (client->skip_shutdown) {
       continue;
     }
-    if (!client->ecu_state || client->ecu_state->state != EcuState::SHUTDOWN_READY) {
+    if (client->ecu_state->state != EcuState::SHUTDOWN_READY) {
       return false;
     }
   }
