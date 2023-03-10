@@ -24,6 +24,8 @@
 #include <boot_shutdown_api_msgs/srv/prepare_shutdown.hpp>
 #include <boot_shutdown_api_msgs/srv/shutdown.hpp>
 
+#include <deque>
+
 namespace boot_shutdown_manager
 {
 using boot_shutdown_api_msgs::msg::EcuState;
@@ -38,6 +40,7 @@ struct EcuClient
   rclcpp::Subscription<EcuState>::SharedPtr sub_ecu_state;
   rclcpp::Client<ExecuteShutdown>::SharedPtr cli_execute;
   rclcpp::Client<PrepareShutdown>::SharedPtr cli_prepare;
+  bool primary;
   bool skip_shutdown;
 };
 
@@ -56,7 +59,7 @@ private:
   rclcpp::CallbackGroup::SharedPtr callback_group_;
 
   EcuStateSummary ecu_state_summary_;
-  std::map<std::string, std::shared_ptr<EcuClient>> ecu_client_map_;
+  std::deque<std::pair<std::string, std::shared_ptr<EcuClient>>> ecu_client_queue_;
   rclcpp::Time last_transition_stamp_;
   double update_rate_;
   double startup_timeout_;
