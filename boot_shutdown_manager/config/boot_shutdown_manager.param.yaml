@@ -11,6 +11,7 @@
 #   state: /{ecu_name}/get/ecu_state
 #   prepare: /api/{ecu_name}/prepare_shutdown
 #   execute: /api/{ecu_name}/execute_shutdown
+#   primary: false
 #   skip_shutdown: false
 ---
 /**:
@@ -23,6 +24,7 @@
         state: /autoware_ecu/get/ecu_state
         prepare: /api/autoware_ecu/prepare_shutdown
         execute: /api/autoware_ecu/execute_shutdown
+        primary: true
       mot:
         skip_shutdown: true 
       logging: default

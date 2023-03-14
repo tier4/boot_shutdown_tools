@@ -93,7 +93,9 @@ BootShutdownManager::BootShutdownManager()
     std::string prepare_service_name;
     std::string execute_service_name;
     bool skip_shutdown;
+    bool primary;
 
+    this->get_parameter_or(param_prefix + "primary", primary, false);
     this->get_parameter_or(param_prefix + "skip_shutdown", skip_shutdown, false);
     this->get_parameter_or(
       param_prefix + "state", state_topic_name, fmt::format("/{}/get/ecu_state", ecu_name));
@@ -118,7 +120,12 @@ BootShutdownManager::BootShutdownManager()
       client->ecu_state->state = EcuState::UNKNOWN;
       client->ecu_state->name = ecu_name;
     }
-    ecu_client_map_.insert({ecu_name, client});
+    if(client->primary){
+      ecu_client_queue_.push_back({ecu_name, client});
+    }else{
+      ecu_client_queue_.push_front({ecu_name, client});
+    }
+
 
     cli_webauto_ = create_client<std_srvs::srv::SetBool>(
       "/webauto/shutdown", rmw_qos_profile_services_default, callback_group_);
@@ -138,7 +145,7 @@ void BootShutdownManager::onShutdownService(
 {
   RCLCPP_INFO(get_logger(), "PrepareShutdown start");
   auto req = std::make_shared<PrepareShutdown::Request>();
-  for (auto & [ecu_name, client] : ecu_client_map_) {
+  for (auto & [ecu_name, client] : ecu_client_queue_) {
     if (client->skip_shutdown) {
       continue;
     }
@@ -184,7 +191,7 @@ void BootShutdownManager::onTimer()
       summary.state = EcuState::SHUTDOWN_READY;
 
       rclcpp::Time last_power_off_time = now();
-      for (auto & [ecu_name, client] : ecu_client_map_) {
+      for (auto & [ecu_name, client] : ecu_client_queue_) {
         if (client->skip_shutdown) {
           continue;
         }
@@ -208,7 +215,7 @@ void BootShutdownManager::onTimer()
 
   // Update detail
   ecu_state_summary_.details.clear();
-  for (auto & [ecu_name, client] : ecu_client_map_) {
+  for (auto & [ecu_name, client] : ecu_client_queue_) {
     ecu_state_summary_.details.push_back(*client->ecu_state);
   }
 
@@ -217,7 +224,7 @@ void BootShutdownManager::onTimer()
 
 bool BootShutdownManager::isRunning() const
 {
-  for (const auto & [ecu_name, client] : ecu_client_map_) {
+  for (const auto & [ecu_name, client] : ecu_client_queue_) {
     if (client->ecu_state->state != EcuState::RUNNING) {
       return false;
     }
@@ -227,7 +234,7 @@ bool BootShutdownManager::isRunning() const
 
 bool BootShutdownManager::isReady() const
 {
-  for (const auto & [ecu_name, client] : ecu_client_map_) {
+  for (const auto & [ecu_name, client] : ecu_client_queue_) {
     if (client->skip_shutdown) {
       continue;
     }
@@ -243,7 +250,7 @@ void BootShutdownManager::executeShutdown()
   RCLCPP_INFO(get_logger(), "ExecuteShutdown start");
   rclcpp::Time latest_power_off_time = now();
   auto req = std::make_shared<ExecuteShutdown::Request>();
-  for (auto & [ecu_name, client] : ecu_client_map_) {
+  for (auto & [ecu_name, client] : ecu_client_queue_) {
     if (client->skip_shutdown) {
       continue;
     }
