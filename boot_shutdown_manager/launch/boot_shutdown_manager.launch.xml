@@ -2,10 +2,12 @@
   <arg name="boot_shutdown_manager_param_path" default="$(find-pkg-share boot_shutdown_manager)/config/boot_shutdown_manager.param.yaml"/>
   <arg name="output/ecu_state_summary" default="/pilot_auto/api/ecu/state"/>
   <arg name="service/shutdown" default="/pilot_auto/api/ecu/shutdown"/>
+  <arg name="service/force_shutdown" default="/pilot_auto/api/ecu/force_shutdown"/>
 
   <node pkg="boot_shutdown_manager" exec="boot_shutdown_manager" name="boot_shutdown_manager" output="screen">
     <remap from="~/output/ecu_state_summary" to="$(var output/ecu_state_summary)"/>
     <remap from="~/service/shutdown" to="$(var service/shutdown)"/>
+    <remap from="~/service/force_shutdown" to="$(var service/force_shutdown)"/>
     <param from="$(var boot_shutdown_manager_param_path)"/>
   </node>
 </launch>

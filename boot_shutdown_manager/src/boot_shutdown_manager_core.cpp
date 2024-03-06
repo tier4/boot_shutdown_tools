@@ -67,12 +67,16 @@ BootShutdownManager::BootShutdownManager()
   ecu_state_summary_.summary.state = EcuState::STARTUP;
   last_transition_stamp_ = now();
   is_shutting_down = false;
+  is_force_shutdown_ = false;
   callback_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
   pub_ecu_state_summary_ =
     create_publisher<EcuStateSummary>("~/output/ecu_state_summary", rclcpp::QoS{1});
   srv_shutdown = create_service<Shutdown>(
     "~/service/shutdown", std::bind(&BootShutdownManager::onShutdownService, this, _1, _2),
+    rmw_qos_profile_default, callback_group_);
+  srv_force_shutdown_ = create_service<Shutdown>(
+    "~/service/force_shutdown", std::bind(&BootShutdownManager::onForceShutdownService, this, _1, _2),
     rmw_qos_profile_default, callback_group_);
 
   std::set<std::string> ecu_names;
@@ -171,6 +175,18 @@ void BootShutdownManager::onShutdownService(
   response->status.success = true;
 }
 
+void BootShutdownManager::onForceShutdownService(
+  Shutdown::Request::SharedPtr request, Shutdown::Response::SharedPtr response)
+{
+  RCLCPP_INFO(get_logger(), "ForceShutdown start");
+
+  is_force_shutdown_ = true;
+
+  onShutdownService(request, response);
+
+  response->status.success = true;
+}
+
 void BootShutdownManager::onTimer()
 {
   // Update summary
@@ -206,6 +222,8 @@ void BootShutdownManager::onTimer()
     } else if (
       (now() - last_transition_stamp_) > rclcpp::Duration::from_seconds(preparation_timeout_)) {
       summary.state = EcuState::SHUTDOWN_TIMEOUT;
+      // Enable the next forced shutdown
+      is_shutting_down = false;
     }
   } else if (summary.state == EcuState::SHUTDOWN_READY) {
     if (!is_shutting_down) {
@@ -234,6 +252,11 @@ bool BootShutdownManager::isRunning() const
 
 bool BootShutdownManager::isReady() const
 {
+  // Ignore the states of ECUs during forced shutdown
+  if (is_force_shutdown_) {
+    return true;
+  }
+
   for (const auto & [ecu_name, client] : ecu_client_queue_) {
     if (client->skip_shutdown) {
       continue;
@@ -256,7 +279,9 @@ void BootShutdownManager::executeShutdown()
     }
     auto resp = call<ExecuteShutdown>(client->cli_execute, req);
     if (!resp) {
-      RCLCPP_WARN(get_logger(), "[%s] PrepareShutdown service call faild.", ecu_name.c_str());
+      RCLCPP_WARN(get_logger(), "[%s] ExecuteShutdown service call faild.", ecu_name.c_str());
+      // Prevent process ressart due to null access when ECU is not running
+      continue;
     }
     rclcpp::Time power_off_time = resp->power_off_time;
     if (latest_power_off_time < power_off_time) {
