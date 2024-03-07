@@ -52,6 +52,7 @@ public:
 private:
   rclcpp::Publisher<EcuStateSummary>::SharedPtr pub_ecu_state_summary_;
   rclcpp::Service<Shutdown>::SharedPtr srv_shutdown;
+  rclcpp::Service<Shutdown>::SharedPtr srv_force_shutdown_;
   rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr cli_webauto_;
 
   rclcpp::TimerBase::SharedPtr timer_;
@@ -65,8 +66,11 @@ private:
   double startup_timeout_;
   double preparation_timeout_;
   bool is_shutting_down;
+  bool is_force_shutdown_;
 
   void onShutdownService(
+    Shutdown::Request::SharedPtr request, Shutdown::Response::SharedPtr response);
+  void onForceShutdownService(
     Shutdown::Request::SharedPtr request, Shutdown::Response::SharedPtr response);
 
   void onTimer();
