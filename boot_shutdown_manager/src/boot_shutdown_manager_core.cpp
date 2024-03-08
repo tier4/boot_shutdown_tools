@@ -180,9 +180,12 @@ void BootShutdownManager::onForceShutdownService(
 {
   RCLCPP_INFO(get_logger(), "ForceShutdown start");
 
-  is_force_shutdown_ = true;
-
   onShutdownService(request, response);
+
+  // Enforce notification of SHUTDOWN_PREPARING
+  pub_ecu_state_summary_->publish(ecu_state_summary_);
+
+  is_force_shutdown_ = true;
 
   response->status.success = true;
 }
