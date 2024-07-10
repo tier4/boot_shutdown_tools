@@ -6,7 +6,7 @@
 
     topic_config:
       name: "/autoware/state"
-      type: "autoware_auto_system_msgs/msg/AutowareState"
+      type: "autoware_system_msgs/msg/AutowareState"
       transient_local: False
       best_effort: False
 
