@@ -17,7 +17,6 @@
 #include <errno.h>
 #include <getopt.h>
 #include <string.h>
-#include <syslog.h>
 #include <unistd.h>
 
 /**
@@ -56,21 +55,11 @@ int main(int argc, char ** argv)
     }
   }
 
-  // Put the program in the background
-  if (daemon(0, 0) < 0) {
-    printf("Failed to put the program in the background. %s\n", strerror(errno));
-    return errno;
-  }
-
-  // Open connection to system logger
-  openlog(nullptr, LOG_PID, LOG_DAEMON);
-
   // Initialize boot/shutdown service
   boot_shutdown_service::BootShutdownService service(socket_path);
 
   if (!service.initialize()) {
     service.shutdown();
-    closelog();
     return EXIT_FAILURE;
   }
 
@@ -79,9 +68,6 @@ int main(int argc, char ** argv)
 
   // Shutdown boot/shutdown service
   service.shutdown();
-
-  // Close descriptor used to write to system logger
-  closelog();
 
   return EXIT_SUCCESS;
 }
