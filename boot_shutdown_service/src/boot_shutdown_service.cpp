@@ -18,13 +18,15 @@
 
 #include <iostream>
 
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
 #include <yaml-cpp/yaml.h>
 
 namespace boot_shutdown_service
 {
 
 BootShutdownService::BootShutdownService(const std::string & config_yaml_path)
-: config_yaml_path_(config_yaml_path)
+: config_yaml_path_(config_yaml_path), timer_(io_context_)
 {
 }
 
@@ -33,13 +35,31 @@ bool BootShutdownService::initialize()
   try {
     YAML::Node config = YAML::LoadFile(config_yaml_path_);
             
-    timeout_duration_ = config["timeout_duration"].as<int>();
-    service_port_ = config["service_port"].as<unsigned short>();
+    server_port_ = config["server_port"].as<unsigned short>();
     publisher_port_ = config["publisher_port"].as<unsigned short>();
+    prepare_shutdown_command_ = config["prepare_shutdown_command"].as<std::vector<std::string>>();
   } catch (const YAML::Exception &e) {
     std::cerr << "Error loading YAML file: " << e.what() << std::endl;
     return false;
   }
+
+  char hostname[HOST_NAME_MAX + 1];
+  gethostname(hostname, sizeof(hostname));
+
+  using std::placeholders::_1;
+  using std::placeholders::_2;
+
+  srv_prepare_shutdown_ = ServiceServer<PrepareShutdownService>::create_service(
+    fmt::format("/api/{}/prepare_shutdown", hostname), io_context_, server_port_,
+    std::bind(&BootShutdownService::onPrepareShutdown, this, _1, _2));
+  srv_execute_shutdown_ = ServiceServer<ExecuteShutdownService>::create_service(
+    fmt::format("/api/{}/execute_shutdown", hostname), io_context_, server_port_,
+    std::bind(&BootShutdownService::onExecuteShutdown, this, _1, _2));
+
+  pub_ecu_state_ = TopicPublisher<EcuStateMessage>::create_publisher(
+    fmt::format("/{}/get/ecu_state", hostname), io_context_, publisher_port_);
+
+  startTimer();
 
   return true;
 }
@@ -48,6 +68,7 @@ void BootShutdownService::shutdown() {}
 
 void BootShutdownService::run()
 {
+  io_context_.run();
 }
 
 void BootShutdownService::prepareShutdown()
@@ -56,10 +77,8 @@ void BootShutdownService::prepareShutdown()
 
   std::cout << "Preparing shutdown..." << std::endl;
 
-  std::vector<std::string> commands;
-
-  std::thread thread([this, commands] {
-    for (const auto & command : commands) {
+  std::thread thread([this] {
+    for (const auto & command : prepare_shutdown_command_) {
       if (!command.empty()) {
         std::cout << "Executing '"<< command << "'" << std::endl;
         boost::process::child c("/bin/sh", "-c", command);
@@ -96,6 +115,34 @@ void BootShutdownService::isReadyToShutdown()
   {
     std::lock_guard<std::mutex> lock(mutex_);
     is_ready = is_ready_;
+  }
+}
+
+oid BootShutdownService::onPrepareShutdown(
+  const PrepareShutdownService & request, PrepareShutdownService & response)
+{
+  prepareShutdown();
+}
+
+void BootShutdownService::onExecuteShutdown(
+  const ExecuteShutdownService & request, ExecuteShutdownService & response)
+{
+  executeShutdown();
+}
+
+void BootShutdownService::startTimer()
+{
+  timer_.expires_after(std::chrono::seconds(1));
+  timer_.async_wait([this](const boost::system::error_code & error_code) { onTimer(error_code); });
+}
+
+void BootShutdownService::onTimer(const boost::system::error_code & error_code)
+{
+  if (!error_code) {
+    pub_ecu_state_->publish(ecu_state_);
+    startTimer();
+  } else {
+    std::cerr << "Timer error: " << error_code.message() << std::endl;
   }
 }
 
