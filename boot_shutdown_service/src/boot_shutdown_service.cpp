@@ -16,8 +16,9 @@
 
 #include <boost/process.hpp>
 
+#include <iostream>
+
 #include <string.h>
-#include <syslog.h>
 
 namespace boot_shutdown_service
 {
@@ -41,14 +42,14 @@ void BootShutdownService::prepareShutdown()
 {
   is_ready_ = false;
 
-  syslog(LOG_INFO, "Preparing shutdown...");
+  std::cout << "Preparing shutdown..." << std::endl;
 
   std::vector<std::string> commands;
 
   std::thread thread([this, commands] {
     for (const auto & command : commands) {
       if (!command.empty()) {
-        syslog(LOG_INFO, "Executing '%s'", command.c_str());
+        std::cout << "Executing '"<< command << "'" << std::endl;
         boost::process::child c("/bin/sh", "-c", command);
         c.wait();
       }
@@ -67,7 +68,7 @@ void BootShutdownService::prepareShutdown()
 
 void BootShutdownService::executeShutdown()
 {
-  syslog(LOG_INFO, "Executing shutdown...");
+  std::cout << "Executing shutdown..." << std::endl;
 
   std::thread thread([this] {
     boost::process::child c("/bin/sh", "-c", "shutdown -h now");
