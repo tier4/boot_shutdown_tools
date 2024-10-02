@@ -26,23 +26,20 @@ namespace boot_shutdown_service
 {
 
 BootShutdownService::BootShutdownService(const std::string & config_yaml_path)
-: config_yaml_path_(config_yaml_path), timer_(io_context_)
+: config_yaml_path_(config_yaml_path),
+  server_port_(parameter_.declare_parameter("server_port", 10000)),
+  publisher_port_(parameter_.declare_parameter("publisher_port", 10001)),
+  startup_timeout_(parameter_.declare_parameter("startup_timeout", 180)),
+  prepare_shutdown_time_(parameter_.declare_parameter("prepare_shutdown_time", 1)),
+  execute_shutdown_time_(parameter_.declare_parameter("execute_shutdown_time", 13)),
+  prepare_shutdown_command_(
+    parameter_.declare_parameter("prepare_shutdown_command", std::vector<std::string>())),
+  timer_(io_context_)
 {
 }
 
 bool BootShutdownService::initialize()
 {
-  try {
-    YAML::Node config = YAML::LoadFile(config_yaml_path_);
-            
-    server_port_ = config["server_port"].as<unsigned short>();
-    publisher_port_ = config["publisher_port"].as<unsigned short>();
-    prepare_shutdown_command_ = config["prepare_shutdown_command"].as<std::vector<std::string>>();
-  } catch (const YAML::Exception &e) {
-    std::cerr << "Error loading YAML file: " << e.what() << std::endl;
-    return false;
-  }
-
   char hostname[HOST_NAME_MAX + 1];
   gethostname(hostname, sizeof(hostname));
 

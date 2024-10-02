@@ -15,6 +15,7 @@
 #ifndef BOOT_SHUTDOWN__SERVICE__BOOT_SHUTDOWN_SERVICE_HPP_
 #define BOOT_SHUTDOWN__SERVICE__BOOT_SHUTDOWN_SERVICE_HPP_
 
+#include "boot_shutdown_service/parameter.hpp"
 #include "boot_shutdown_udp/service_server.hpp"
 #include "boot_shutdown_udp/topic_publisher.hpp"
 
@@ -29,6 +30,7 @@
 namespace boot_shutdown_service
 {
 
+using boot_shutdown_internal_msgs::msg::EcuState;
 using boot_shutdown_internal_msgs::msg::EcuStateMessage;
 using boot_shutdown_internal_msgs::srv::ExecuteShutdownService;
 using boot_shutdown_internal_msgs::srv::PrepareShutdownService;
@@ -82,13 +84,15 @@ protected:
   void startTimer();
   void onTimer(const boost::system::error_code & error_code);
 
-  std::string config_yaml_path_;  //!< @brief Configuration yaml file path
-  std::mutex mutex_;              //!< @brief Mutex guard for the flag
-  bool is_ready_;                 //!< @brief Ready to execute shutdown
+  std::string config_yaml_path_;
+  Parameter parameter_{config_yaml_path_};
 
   unsigned short server_port_;
   unsigned short publisher_port_;
   std::vector<std::string> prepare_shutdown_command_;
+  unsigned int startup_timeout_;
+  unsigned int prepare_shutdown_time_;
+  unsigned int execute_shutdown_time_;
 
   boost::asio::io_context io_context_;
 
@@ -98,6 +102,9 @@ protected:
   TopicPublisher<EcuStateMessage>::SharedPtr pub_ecu_state_;
   EcuStateMessage ecu_state_;
   boost::asio::steady_timer timer_;
+
+  std::mutex mutex_;
+  bool is_ready_;
 };
 
 }  // namespace boot_shutdown_service
