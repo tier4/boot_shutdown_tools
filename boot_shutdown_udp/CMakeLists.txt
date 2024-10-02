@@ -14,10 +14,3 @@ install(TARGETS ${PROJECT_NAME}
   ARCHIVE DESTINATION lib
 )
 install(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
-
-install(
-  EXPORT export_${PROJECT_NAME}
-  DESTINATION share/${PROJECT_NAME}/cmake
-  NAMESPACE "${PROJECT_NAME}::"
-  FILE "export_${PROJECT_NAME}Export.cmake"
-)
