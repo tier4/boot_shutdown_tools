@@ -18,17 +18,29 @@
 
 #include <iostream>
 
-#include <string.h>
+#include <yaml-cpp/yaml.h>
 
 namespace boot_shutdown_service
 {
 
-BootShutdownService::BootShutdownService()
+BootShutdownService::BootShutdownService(const std::string & config_yaml_path)
+: config_yaml_path_(config_yaml_path)
 {
 }
 
 bool BootShutdownService::initialize()
 {
+  try {
+    YAML::Node config = YAML::LoadFile(config_yaml_path_);
+            
+    timeout_duration_ = config["timeout_duration"].as<int>();
+    service_port_ = config["service_port"].as<unsigned short>();
+    publisher_port_ = config["publisher_port"].as<unsigned short>();
+  } catch (const YAML::Exception &e) {
+    std::cerr << "Error loading YAML file: " << e.what() << std::endl;
+    return false;
+  }
+
   return true;
 }
 

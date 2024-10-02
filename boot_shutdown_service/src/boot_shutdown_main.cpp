@@ -26,23 +26,29 @@ void usage()
 {
   printf("Usage: msr_reader [options]\n");
   printf("  -h --help   : Display help\n");
+  printf("  -c --config : Configuration yaml file path\n");
   printf("\n");
 }
 
 int main(int argc, char ** argv)
 {
   static struct option long_options[] = {
-    {"help", no_argument, 0, 'h'}, {"socket", required_argument, nullptr, 's'}, {0, 0, 0, 0}};
+    {"help", no_argument, 0, 'h'}, {"config", required_argument, nullptr, 'c'}, {0, 0, 0, 0}};
 
   // Parse command-line options
   int c = 0;
   int option_index = 0;
+  std::string config_yaml_path;
 
-  while ((c = getopt_long(argc, argv, "hs:", long_options, &option_index)) != -1) {
+  while ((c = getopt_long(argc, argv, "hc:", long_options, &option_index)) != -1) {
     switch (c) {
       case 'h':
         usage();
         return EXIT_SUCCESS;
+
+      case 'c':
+        config_yaml_path = optarg;
+        break;
 
       default:
         break;
@@ -50,7 +56,7 @@ int main(int argc, char ** argv)
   }
 
   // Initialize boot/shutdown service
-  boot_shutdown_service::BootShutdownService service;
+  boot_shutdown_service::BootShutdownService service(config_yaml_path);
 
   if (!service.initialize()) {
     service.shutdown();

@@ -25,8 +25,9 @@ class BootShutdownService
 public:
   /**
    * @brief Constructor
+   * @param[in] config_yaml_path Configuration yaml file path
    */
-  BootShutdownService();
+  explicit BootShutdownService(const std::string & config_yaml_path);
 
   /**
    * @brief Initialization
@@ -60,8 +61,13 @@ protected:
    */
   void isReadyToShutdown();
 
-  std::mutex mutex_;         //!< @brief Mutex guard for the flag
-  bool is_ready_;            //!< @brief Ready to execute shutdown
+  std::string config_yaml_path_;  //!< @brief Configuration yaml file path
+  std::mutex mutex_;              //!< @brief Mutex guard for the flag
+  bool is_ready_;                 //!< @brief Ready to execute shutdown
+
+  int timeout_duration_;
+  unsigned short service_port_;
+  unsigned short publisher_port_;
 };
 
 }  // namespace boot_shutdown_service
