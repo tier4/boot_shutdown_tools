@@ -8,10 +8,6 @@ target_include_directories(${PROJECT_NAME} INTERFACE
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 
-target_compile_definitions(${PROJECT_NAME} INTERFACE
-  BOOST_ERROR_CODE_HEADER_ONLY
-)
-
 install(TARGETS ${PROJECT_NAME}
   EXPORT export_${PROJECT_NAME}
   LIBRARY DESTINATION lib
