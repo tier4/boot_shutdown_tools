@@ -14,150 +14,36 @@
 
 #include "boot_shutdown_service/boot_shutdown_service.hpp"
 
-#include <boost/archive/text_oarchive.hpp>
 #include <boost/process.hpp>
-#include <boost/serialization/string.hpp>
-#include <boost/serialization/vector.hpp>
 
-#include <errno.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
-#include <sys/un.h>
 #include <syslog.h>
 
 namespace boot_shutdown_service
 {
 
-BootShutdownService::BootShutdownService(const std::string & socket_path)
-: socket_path_(socket_path), socket_(-1), connection_(-1)
+BootShutdownService::BootShutdownService()
 {
 }
 
 bool BootShutdownService::initialize()
 {
-  // Remove previous binding
-  remove(socket_path_.c_str());
-
-  // Create a new socket
-  socket_ = socket(AF_UNIX, SOCK_STREAM, 0);
-  if (socket_ < 0) {
-    syslog(LOG_ERR, "Failed to create a new socket. %s\n", strerror(errno));
-    return false;
-  }
-
-  sockaddr_un addr = {};
-  addr.sun_family = AF_UNIX;
-  strncpy(addr.sun_path, socket_path_.c_str(), sizeof(addr.sun_path) - 1);
-
-  // Give the socket FD the unix domain socket
-  int ret = bind(socket_, (struct sockaddr *)&addr, sizeof(addr));
-  if (ret < 0) {
-    syslog(LOG_ERR, "Failed to give the socket FD the unix domain socket. %s\n", strerror(errno));
-    shutdown();
-    return false;
-  }
-
-  // Give permission to other users to access to socket
-  if (chmod(socket_path_.c_str(), S_IRWXU | S_IRWXG | S_IRWXO) != 0) {
-    syslog(LOG_ERR, "Failed to give permission to unix domain socket. %s\n", strerror(errno));
-    return false;
-  }
-
-  // Prepare to accept connections on socket FD
-  ret = listen(socket_, 5);
-  if (ret < 0) {
-    syslog(LOG_ERR, "Failed to prepare to accept connections on socket FD. %s\n", strerror(errno));
-    shutdown();
-    return false;
-  }
-
   return true;
 }
 
-void BootShutdownService::shutdown() { close(socket_); }
+void BootShutdownService::shutdown() {}
 
 void BootShutdownService::run()
 {
-  sockaddr_un client = {};
-  socklen_t len = sizeof(client);
-
-  while (true) {
-    // Await a connection on socket FD
-    connection_ = accept(socket_, reinterpret_cast<sockaddr *>(&client), &len);
-    if (connection_ < 0) {
-      syslog(
-        LOG_ERR, "Failed to prepare to accept connections on socket FD. %s\n", strerror(errno));
-      close(connection_);
-      continue;
-    }
-
-    // Receive messages from a socket
-    char buffer[1024]{};
-    int ret = recv(connection_, buffer, sizeof(buffer) - 1, 0);
-    if (ret < 0) {
-      syslog(LOG_ERR, "Failed to recv. %s\n", strerror(errno));
-      close(connection_);
-      continue;
-    }
-    // No data received
-    if (ret == 0) {
-      syslog(LOG_ERR, "No data received.\n");
-      close(connection_);
-      continue;
-    }
-
-    // Handle message
-    handleMessage(buffer);
-
-    close(connection_);
-  }
 }
 
-void BootShutdownService::handleMessage(const char * buffer)
-{
-  uint8_t request_id = Request::NONE;
-
-  // Restore request from ros node
-  std::istringstream in_stream(buffer);
-  boost::archive::text_iarchive archive(in_stream);
-
-  try {
-    archive >> request_id;
-  } catch (const std::exception & e) {
-    syslog(LOG_ERR, "Failed to restore message. %s\n", e.what());
-    return;
-  }
-
-  switch (request_id) {
-    case Request::PREPARE_SHUTDOWN:
-      prepareShutdown(archive);
-      break;
-    case Request::EXECUTE_SHUTDOWN:
-      executeShutdown();
-      break;
-    case Request::IS_READY_TO_SHUTDOWN:
-      isReadyToShutdown();
-      break;
-    default:
-      syslog(LOG_WARNING, "Unknown message. %d\n", request_id);
-      break;
-  }
-}
-
-void BootShutdownService::prepareShutdown(boost::archive::text_iarchive & archive)
+void BootShutdownService::prepareShutdown()
 {
   is_ready_ = false;
 
   syslog(LOG_INFO, "Preparing shutdown...");
 
   std::vector<std::string> commands;
-  try {
-    archive >> commands;
-  } catch (const std::exception & e) {
-    syslog(LOG_ERR, "Failed to restore optional commands. %s\n", e.what());
-    commands.clear();
-  }
 
   std::thread thread([this, commands] {
     for (const auto & command : commands) {
@@ -197,18 +83,6 @@ void BootShutdownService::isReadyToShutdown()
   {
     std::lock_guard<std::mutex> lock(mutex_);
     is_ready = is_ready_;
-  }
-
-  // Inform ros node
-  std::ostringstream out_stream;
-  boost::archive::text_oarchive archive(out_stream);
-  archive & Request::IS_READY_TO_SHUTDOWN;
-  archive & is_ready;
-
-  //  Write N bytes of BUF to FD
-  int ret = write(connection_, out_stream.str().c_str(), out_stream.str().length());
-  if (ret < 0) {
-    syslog(LOG_ERR, "Failed to write N bytes of BUF to FD. %s\n", strerror(errno));
   }
 }
 

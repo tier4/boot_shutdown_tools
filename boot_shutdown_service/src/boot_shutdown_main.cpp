@@ -26,7 +26,6 @@ void usage()
 {
   printf("Usage: msr_reader [options]\n");
   printf("  -h --help   : Display help\n");
-  printf("  -s --socket # : Path of UNIX domain socket.\n");
   printf("\n");
 }
 
@@ -38,7 +37,6 @@ int main(int argc, char ** argv)
   // Parse command-line options
   int c = 0;
   int option_index = 0;
-  std::string socket_path = boot_shutdown_service::SOCKET_PATH;
 
   while ((c = getopt_long(argc, argv, "hs:", long_options, &option_index)) != -1) {
     switch (c) {
@@ -46,17 +44,13 @@ int main(int argc, char ** argv)
         usage();
         return EXIT_SUCCESS;
 
-      case 's':
-        socket_path = optarg;
-        break;
-
       default:
         break;
     }
   }
 
   // Initialize boot/shutdown service
-  boot_shutdown_service::BootShutdownService service(socket_path);
+  boot_shutdown_service::BootShutdownService service;
 
   if (!service.initialize()) {
     service.shutdown();

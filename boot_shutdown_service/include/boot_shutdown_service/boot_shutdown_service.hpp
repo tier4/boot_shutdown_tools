@@ -15,12 +15,7 @@
 #ifndef BOOT_SHUTDOWN__SERVICE__BOOT_SHUTDOWN_SERVICE_HPP_
 #define BOOT_SHUTDOWN__SERVICE__BOOT_SHUTDOWN_SERVICE_HPP_
 
-#include "boot_shutdown_service/boot_shutdown_common.hpp"
-
-#include <boost/archive/text_iarchive.hpp>
-
 #include <mutex>
-#include <string>
 
 namespace boot_shutdown_service
 {
@@ -30,9 +25,8 @@ class BootShutdownService
 public:
   /**
    * @brief Constructor
-   * @param[in] socket_path Path of UNIX domain socket
    */
-  explicit BootShutdownService(const std::string & socket_path);
+  BootShutdownService();
 
   /**
    * @brief Initialization
@@ -52,16 +46,9 @@ public:
 
 protected:
   /**
-   * @brief Handle messsage
-   * @param[in] buffer Pointer to data received
-   */
-  void handleMessage(const char * buffer);
-
-  /**
    * @brief Prepare shutdown
-   * @param[in] archive Archive object for loading
    */
-  void prepareShutdown(boost::archive::text_iarchive & archive);
+  void prepareShutdown();
 
   /**
    * @brief Execute shutdown
@@ -73,10 +60,6 @@ protected:
    */
   void isReadyToShutdown();
 
-  std::string socket_path_;  //!< @brief Path of UNIX domain socket
-  int port_;                 //!< @brief Port number to access l2ping service
-  int socket_;               //!< @brief Socket to communicate with ros node
-  int connection_;           //!< @brief Accepted socket for the incoming connection
   std::mutex mutex_;         //!< @brief Mutex guard for the flag
   bool is_ready_;            //!< @brief Ready to execute shutdown
 };
