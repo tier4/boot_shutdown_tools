@@ -43,6 +43,9 @@ bool BootShutdownService::initialize()
   char hostname[HOST_NAME_MAX + 1];
   gethostname(hostname, sizeof(hostname));
 
+  ecu_state_.state_ = EcuState::STARTUP;
+  startup_time_ = std::chrono::system_clock::now();
+
   using std::placeholders::_1;
   using std::placeholders::_2;
 
@@ -61,11 +64,98 @@ bool BootShutdownService::initialize()
   return true;
 }
 
-void BootShutdownService::shutdown() {}
-
 void BootShutdownService::run()
 {
   io_context_.run();
+}
+
+void BootShutdownService::onPrepareShutdown(
+  const PrepareShutdownService & request, PrepareShutdownService & response)
+{
+  std::cout << "Preparing shutdown..." << std::endl;
+
+  {
+    std::lock_guard<std::mutex> lock(ecu_state_mutex_);
+    ecu_state_.state_ = EcuState::SHUTDOWN_PREPARING;
+    prepare_shutdown_start_time_ = std::chrono::system_clock::now();
+
+    ecu_state_.power_off_time_ =
+      prepare_shutdown_start_time_ +
+      std::chrono::seconds(prepare_shutdown_time_ + execute_shutdown_time_);
+
+    response.status_.success_ = true;
+    response.power_off_time_ = ecu_state_.power_off_time_;
+  }
+
+  prepareShutdown();
+}
+
+void BootShutdownService::onExecuteShutdown(
+  const ExecuteShutdownService & request, ExecuteShutdownService & response)
+{
+  std::cout << "Executing shutdown..." << std::endl;
+
+  response.status_.success_ = true;
+  response.power_off_time_ =
+    std::chrono::system_clock::now() + std::chrono::seconds(execute_shutdown_time_);
+
+  executeShutdown();
+}
+
+void BootShutdownService::startTimer()
+{
+  timer_.expires_after(std::chrono::seconds(1));
+  timer_.async_wait([this](const boost::system::error_code & error_code) { onTimer(error_code); });
+}
+
+void BootShutdownService::onTimer(const boost::system::error_code & error_code)
+{
+  if (!error_code) {
+    {
+      std::lock_guard<std::mutex> lock(ecu_state_mutex_);
+      if (
+        ecu_state_.state_ == EcuState::STARTUP || ecu_state_.state_ == EcuState::STARTUP_TIMEOUT) {
+        if (isRunning()) {
+          ecu_state_.state_ = EcuState::RUNNING;
+        } else if (isStartupTimeout()) {
+          ecu_state_.state_ = EcuState::STARTUP_TIMEOUT;
+        }
+      } else if (
+        ecu_state_.state_ == EcuState::SHUTDOWN_PREPARING ||
+        ecu_state_.state_ == EcuState::SHUTDOWN_TIMEOUT) {
+        if (isReady()) {
+          ecu_state_.state_ = EcuState::SHUTDOWN_READY;
+        } else if (isPreparationTimeout()) {
+          ecu_state_.state_ = EcuState::SHUTDOWN_TIMEOUT;
+        }
+      }
+      pub_ecu_state_->publish(ecu_state_);
+    }
+    startTimer();
+  } else {
+    std::cerr << "Timer error: " << error_code.message() << std::endl;
+  }
+}
+
+void BootShutdownService::publish_ecu_state_message()
+{
+  std::lock_guard<std::mutex> lock(ecu_state_mutex_);
+  if (ecu_state_.state_ == EcuState::STARTUP || ecu_state_.state_ == EcuState::STARTUP_TIMEOUT) {
+    if (isRunning()) {
+      ecu_state_.state_ = EcuState::RUNNING;
+    } else if (isStartupTimeout()) {
+      ecu_state_.state_ = EcuState::STARTUP_TIMEOUT;
+    }
+  } else if (
+    ecu_state_.state_ == EcuState::SHUTDOWN_PREPARING ||
+    ecu_state_.state_ == EcuState::SHUTDOWN_TIMEOUT) {
+    if (isReady()) {
+      ecu_state_.state_ = EcuState::SHUTDOWN_READY;
+    } else if (isPreparationTimeout()) {
+      ecu_state_.state_ = EcuState::SHUTDOWN_TIMEOUT;
+    }
+  }
+  pub_ecu_state_->publish(ecu_state_);
 }
 
 void BootShutdownService::prepareShutdown()
@@ -77,7 +167,7 @@ void BootShutdownService::prepareShutdown()
   std::thread thread([this] {
     for (const auto & command : prepare_shutdown_command_) {
       if (!command.empty()) {
-        std::cout << "Executing '"<< command << "'" << std::endl;
+        std::cout << "Executing '" << command << "'" << std::endl;
         boost::process::child c("/bin/sh", "-c", command);
         c.wait();
       }
@@ -106,41 +196,32 @@ void BootShutdownService::executeShutdown()
   thread.detach();
 }
 
-void BootShutdownService::isReadyToShutdown()
+bool BootShutdownService::isRunning()
+{
+  return true;
+}
+
+bool BootShutdownService::isStartupTimeout()
+{
+  return (std::chrono::system_clock::now() - startup_time_) >
+         std::chrono::seconds(startup_timeout_);
+}
+
+bool BootShutdownService::isPreparationTimeout()
+{
+  return (std::chrono::system_clock::now() - prepare_shutdown_start_time_) >
+         std::chrono::seconds(prepare_shutdown_time_);
+}
+
+bool BootShutdownService::isReady()
 {
   bool is_ready = false;
   {
     std::lock_guard<std::mutex> lock(mutex_);
     is_ready = is_ready_;
   }
-}
 
-oid BootShutdownService::onPrepareShutdown(
-  const PrepareShutdownService & request, PrepareShutdownService & response)
-{
-  prepareShutdown();
-}
-
-void BootShutdownService::onExecuteShutdown(
-  const ExecuteShutdownService & request, ExecuteShutdownService & response)
-{
-  executeShutdown();
-}
-
-void BootShutdownService::startTimer()
-{
-  timer_.expires_after(std::chrono::seconds(1));
-  timer_.async_wait([this](const boost::system::error_code & error_code) { onTimer(error_code); });
-}
-
-void BootShutdownService::onTimer(const boost::system::error_code & error_code)
-{
-  if (!error_code) {
-    pub_ecu_state_->publish(ecu_state_);
-    startTimer();
-  } else {
-    std::cerr << "Timer error: " << error_code.message() << std::endl;
-  }
+  return is_ready;
 }
 
 }  // namespace boot_shutdown_service

@@ -19,9 +19,6 @@
 #include <string.h>
 #include <unistd.h>
 
-/**
- * @brief Print usage
- */
 void usage()
 {
   printf("Usage: msr_reader [options]\n");
@@ -35,7 +32,6 @@ int main(int argc, char ** argv)
   static struct option long_options[] = {
     {"help", no_argument, 0, 'h'}, {"config", required_argument, nullptr, 'c'}, {0, 0, 0, 0}};
 
-  // Parse command-line options
   int c = 0;
   int option_index = 0;
   std::string config_yaml_path;
@@ -55,19 +51,13 @@ int main(int argc, char ** argv)
     }
   }
 
-  // Initialize boot/shutdown service
   boot_shutdown_service::BootShutdownService service(config_yaml_path);
 
   if (!service.initialize()) {
-    service.shutdown();
     return EXIT_FAILURE;
   }
 
-  // Run main loop
   service.run();
-
-  // Shutdown boot/shutdown service
-  service.shutdown();
 
   return EXIT_SUCCESS;
 }

@@ -40,49 +40,25 @@ using boot_shutdown_udp::TopicPublisher;
 class BootShutdownService
 {
 public:
-  /**
-   * @brief Constructor
-   * @param[in] config_yaml_path Configuration yaml file path
-   */
   explicit BootShutdownService(const std::string & config_yaml_path);
-
-  /**
-   * @brief Initialization
-   * @return true on success, false on error
-   */
   bool initialize();
-
-  /**
-   * @brief Shutdown
-   */
-  void shutdown();
-
-  /**
-   * @brief Main loop
-   */
   void run();
 
 protected:
-  /**
-   * @brief Prepare shutdown
-   */
-  void prepareShutdown();
-
-  /**
-   * @brief Execute shutdown
-   */
-  void executeShutdown();
-
-  /**
-   * @brief Return if ready to execute shutdown or not
-   */
-  void isReadyToShutdown();
-
   void onPrepareShutdown(const PrepareShutdownService & request, PrepareShutdownService & response);
   void onExecuteShutdown(const ExecuteShutdownService & request, ExecuteShutdownService & response);
 
   void startTimer();
   void onTimer(const boost::system::error_code & error_code);
+
+  void publish_ecu_state_message();
+  void prepareShutdown();
+  void executeShutdown();
+
+  bool isRunning();
+  bool isStartupTimeout();
+  bool isPreparationTimeout();
+  bool isReady();
 
   std::string config_yaml_path_;
   Parameter parameter_{config_yaml_path_};
@@ -102,9 +78,13 @@ protected:
   TopicPublisher<EcuStateMessage>::SharedPtr pub_ecu_state_;
   EcuStateMessage ecu_state_;
   boost::asio::steady_timer timer_;
+  std::mutex ecu_state_mutex_;
 
   std::mutex mutex_;
   bool is_ready_;
+
+  std::chrono::system_clock::time_point startup_time_;
+  std::chrono::system_clock::time_point prepare_shutdown_start_time_;
 };
 
 }  // namespace boot_shutdown_service
