@@ -43,7 +43,7 @@ bool BootShutdownService::initialize()
   char hostname[HOST_NAME_MAX + 1];
   gethostname(hostname, sizeof(hostname));
 
-  ecu_state_.state_ = EcuState::STARTUP;
+  ecu_state_.state = EcuStateType::STARTUP;
   startup_time_ = std::chrono::system_clock::now();
 
   using std::placeholders::_1;
@@ -76,15 +76,15 @@ void BootShutdownService::onPrepareShutdown(
 
   {
     std::lock_guard<std::mutex> lock(ecu_state_mutex_);
-    ecu_state_.state_ = EcuState::SHUTDOWN_PREPARING;
+    ecu_state_.state = EcuStateType::SHUTDOWN_PREPARING;
     prepare_shutdown_start_time_ = std::chrono::system_clock::now();
 
-    ecu_state_.power_off_time_ =
+    ecu_state_.power_off_time =
       prepare_shutdown_start_time_ +
       std::chrono::seconds(prepare_shutdown_time_ + execute_shutdown_time_);
 
-    response.status_.success_ = true;
-    response.power_off_time_ = ecu_state_.power_off_time_;
+    response.status.success = true;
+    response.power_off_time = ecu_state_.power_off_time;
   }
 
   prepareShutdown();
@@ -95,8 +95,8 @@ void BootShutdownService::onExecuteShutdown(
 {
   std::cout << "Executing shutdown..." << std::endl;
 
-  response.status_.success_ = true;
-  response.power_off_time_ =
+  response.status.success = true;
+  response.power_off_time =
     std::chrono::system_clock::now() + std::chrono::seconds(execute_shutdown_time_);
 
   executeShutdown();
@@ -121,19 +121,21 @@ void BootShutdownService::onTimer(const boost::system::error_code & error_code)
 void BootShutdownService::publish_ecu_state_message()
 {
   std::lock_guard<std::mutex> lock(ecu_state_mutex_);
-  if (ecu_state_.state_ == EcuState::STARTUP || ecu_state_.state_ == EcuState::STARTUP_TIMEOUT) {
+  if (
+    ecu_state_.state == EcuStateType::STARTUP ||
+    ecu_state_.state == EcuStateType::STARTUP_TIMEOUT) {
     if (isRunning()) {
-      ecu_state_.state_ = EcuState::RUNNING;
+      ecu_state_.state = EcuStateType::RUNNING;
     } else if (isStartupTimeout()) {
-      ecu_state_.state_ = EcuState::STARTUP_TIMEOUT;
+      ecu_state_.state = EcuStateType::STARTUP_TIMEOUT;
     }
   } else if (
-    ecu_state_.state_ == EcuState::SHUTDOWN_PREPARING ||
-    ecu_state_.state_ == EcuState::SHUTDOWN_TIMEOUT) {
+    ecu_state_.state == EcuStateType::SHUTDOWN_PREPARING ||
+    ecu_state_.state == EcuStateType::SHUTDOWN_TIMEOUT) {
     if (isReady()) {
-      ecu_state_.state_ = EcuState::SHUTDOWN_READY;
+      ecu_state_.state = EcuStateType::SHUTDOWN_READY;
     } else if (isPreparationTimeout()) {
-      ecu_state_.state_ = EcuState::SHUTDOWN_TIMEOUT;
+      ecu_state_.state = EcuStateType::SHUTDOWN_TIMEOUT;
     }
   }
   pub_ecu_state_->publish(ecu_state_);
