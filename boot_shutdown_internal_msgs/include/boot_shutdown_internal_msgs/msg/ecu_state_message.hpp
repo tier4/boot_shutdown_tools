@@ -27,7 +27,7 @@ namespace boot_shutdown_internal_msgs
 namespace msg
 {
 
-enum EcuState {
+enum EcuStateType {
   UNKNOWN = 0,
   STARTUP = 1,
   RUNNING = 2,
@@ -42,9 +42,9 @@ class EcuStateMessage
 public:
   EcuStateMessage() = default;
   EcuStateMessage(
-    EcuState state, const std::string & message,
+    EcuStateType state, const std::string & name, const std::string & message,
     std::chrono::system_clock::time_point power_off_time)
-  : state_(state), message_(message), power_off_time_(power_off_time)
+  : state_(state), name_(name), message_(message), power_off_time_(power_off_time)
   {
   }
 
@@ -52,6 +52,7 @@ public:
   void serialize(Archive & ar, const unsigned int version)
   {
     ar & state_;
+    ar & name_;
     ar & message_;
     if (Archive::is_loading::value) {
       long long ms_since_epoch;
@@ -66,7 +67,8 @@ public:
     }
   }
 
-  EcuState state_;
+  EcuStateType state_;
+  std::string name_;
   std::string message_;
   std::chrono::system_clock::time_point power_off_time_;
 };
