@@ -42,21 +42,21 @@ class ResponseStatus
 public:
   ResponseStatus() = default;
   ResponseStatus(bool success, Code code, const std::string & message)
-  : success_(success), code_(code), message_(message)
+  : success(success), code(code), message(message)
   {
   }
 
   template <class Archive>
   void serialize(Archive & ar, const unsigned int version)
   {
-    ar & success_;
-    ar & code_;
-    ar & message_;
+    ar & success;
+    ar & code;
+    ar & message;
   }
 
-  bool success_;
-  Code code_;
-  std::string message_;
+  bool success;
+  Code code;
+  std::string message;
 };
 
 }  // namespace msg

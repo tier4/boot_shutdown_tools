@@ -37,29 +37,29 @@ public:
   PrepareShutdownService() = default;
   PrepareShutdownService(
     ResponseStatus status, std::chrono::system_clock::time_point power_off_time)
-  : status_(status), power_off_time_(power_off_time)
+  : status(status), power_off_time(power_off_time)
   {
   }
 
   template <class Archive>
   void serialize(Archive & ar, const unsigned int version)
   {
-    ar & status_;
+    ar & status;
     if (Archive::is_loading::value) {
       long long ms_since_epoch;
       ar & ms_since_epoch;
-      power_off_time_ =
+      power_off_time =
         std::chrono::system_clock::time_point(std::chrono::milliseconds(ms_since_epoch));
     } else {
       auto ms_since_epoch =
-        std::chrono::duration_cast<std::chrono::milliseconds>(power_off_time_.time_since_epoch())
+        std::chrono::duration_cast<std::chrono::milliseconds>(power_off_time.time_since_epoch())
           .count();
       ar & ms_since_epoch;
     }
   }
 
-  ResponseStatus status_;
-  std::chrono::system_clock::time_point power_off_time_;
+  ResponseStatus status;
+  std::chrono::system_clock::time_point power_off_time;
 };
 
 }  // namespace srv

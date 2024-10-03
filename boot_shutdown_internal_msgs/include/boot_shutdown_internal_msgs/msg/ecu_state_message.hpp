@@ -44,33 +44,33 @@ public:
   EcuStateMessage(
     EcuStateType state, const std::string & name, const std::string & message,
     std::chrono::system_clock::time_point power_off_time)
-  : state_(state), name_(name), message_(message), power_off_time_(power_off_time)
+  : state(state), name(name), message(message), power_off_time(power_off_time)
   {
   }
 
   template <class Archive>
   void serialize(Archive & ar, const unsigned int version)
   {
-    ar & state_;
-    ar & name_;
-    ar & message_;
+    ar & state;
+    ar & name;
+    ar & message;
     if (Archive::is_loading::value) {
       long long ms_since_epoch;
       ar & ms_since_epoch;
-      power_off_time_ =
+      power_off_time =
         std::chrono::system_clock::time_point(std::chrono::milliseconds(ms_since_epoch));
     } else {
       auto ms_since_epoch =
-        std::chrono::duration_cast<std::chrono::milliseconds>(power_off_time_.time_since_epoch())
+        std::chrono::duration_cast<std::chrono::milliseconds>(power_off_time.time_since_epoch())
           .count();
       ar & ms_since_epoch;
     }
   }
 
-  EcuStateType state_;
-  std::string name_;
-  std::string message_;
-  std::chrono::system_clock::time_point power_off_time_;
+  EcuStateType state;
+  std::string name;
+  std::string message;
+  std::chrono::system_clock::time_point power_off_time;
 };
 
 }  // namespace msg
