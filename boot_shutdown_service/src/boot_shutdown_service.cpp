@@ -111,26 +111,7 @@ void BootShutdownService::startTimer()
 void BootShutdownService::onTimer(const boost::system::error_code & error_code)
 {
   if (!error_code) {
-    {
-      std::lock_guard<std::mutex> lock(ecu_state_mutex_);
-      if (
-        ecu_state_.state_ == EcuState::STARTUP || ecu_state_.state_ == EcuState::STARTUP_TIMEOUT) {
-        if (isRunning()) {
-          ecu_state_.state_ = EcuState::RUNNING;
-        } else if (isStartupTimeout()) {
-          ecu_state_.state_ = EcuState::STARTUP_TIMEOUT;
-        }
-      } else if (
-        ecu_state_.state_ == EcuState::SHUTDOWN_PREPARING ||
-        ecu_state_.state_ == EcuState::SHUTDOWN_TIMEOUT) {
-        if (isReady()) {
-          ecu_state_.state_ = EcuState::SHUTDOWN_READY;
-        } else if (isPreparationTimeout()) {
-          ecu_state_.state_ = EcuState::SHUTDOWN_TIMEOUT;
-        }
-      }
-      pub_ecu_state_->publish(ecu_state_);
-    }
+    publish_ecu_state_message();
     startTimer();
   } else {
     std::cerr << "Timer error: " << error_code.message() << std::endl;
