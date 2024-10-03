@@ -113,23 +113,21 @@ BootShutdownManager::BootShutdownManager()
     auto client = std::make_shared<EcuClient>();
     {
       client->skip_shutdown = skip_shutdown;
-      client->cli_execute = create_client<ExecuteShutdown>(
-        execute_service_name, rmw_qos_profile_services_default, callback_group_);
-      client->cli_prepare =
-        create_client<PrepareShutdown>(prepare_service_name, rmw_qos_profile_services_default);
-      client->sub_ecu_state = create_subscription<EcuState>(
-        state_topic_name, rclcpp::QoS{1},
-        [this, client](const EcuState::SharedPtr msg) { client->ecu_state = msg; });
-      client->ecu_state = std::make_shared<EcuState>();
-      client->ecu_state->state = EcuState::UNKNOWN;
-      client->ecu_state->name = ecu_name;
+      client->cli_execute = ServiceClient<ExecuteShutdownService>::create_client(
+        execute_service_name, io_context_, 10000);
+      client->cli_prepare = ServiceClient<PrepareShutdownService>::create_client(
+        prepare_service_name, io_context_, 10000);
+      client->sub_ecu_state = TopicSubscriber<EcuStateMessage>::create_subscription(
+        state_topic_name, io_context_, 10001,
+        [this, client](const EcuStateMessage & message) { client->ecu_state = message; });
+      client->ecu_state.state = EcuStateType::UNKNOWN;
+      client->ecu_state.name = ecu_name;
     }
-    if(client->primary){
+    if (client->primary) {
       ecu_client_queue_.push_back({ecu_name, client});
-    }else{
+    } else {
       ecu_client_queue_.push_front({ecu_name, client});
     }
-
 
     cli_webauto_ = create_client<std_srvs::srv::SetBool>(
       "/webauto/shutdown", rmw_qos_profile_services_default, callback_group_);
@@ -142,20 +140,35 @@ BootShutdownManager::BootShutdownManager()
   const auto period_ns = rclcpp::Rate(update_rate_).period();
   timer_ = rclcpp::create_timer(
     this, get_clock(), period_ns, std::bind(&BootShutdownManager::onTimer, this));
+
+  io_thread_ = std::thread([this]() { io_context_.run(); });
+}
+
+BootShutdownManager::~BootShutdownManager()
+{
+  if (io_thread_.joinable()) {
+    io_context_.stop();
+    io_thread_.join();
+  }
 }
 
 void BootShutdownManager::onShutdownService(
   Shutdown::Request::SharedPtr, Shutdown::Response::SharedPtr response)
 {
   RCLCPP_INFO(get_logger(), "PrepareShutdown start");
-  auto req = std::make_shared<PrepareShutdown::Request>();
+
   for (auto & [ecu_name, client] : ecu_client_queue_) {
     if (client->skip_shutdown) {
       continue;
     }
-    auto resp = call<PrepareShutdown>(client->cli_prepare, req);
-    if (!resp) {
-      RCLCPP_WARN(get_logger(), "[%s] PrepareShutdown service call faild.", ecu_name.c_str());
+
+    try {
+      PrepareShutdownService req;
+      auto resp = client->cli_prepare->call(req);
+    } catch (const std::runtime_error & e) {
+      RCLCPP_WARN(get_logger(), "Error: %s", e.what());
+    } catch (...) {
+      RCLCPP_WARN(get_logger(), "Unknown error occurred.");
     }
   }
 
@@ -214,7 +227,8 @@ void BootShutdownManager::onTimer()
         if (client->skip_shutdown) {
           continue;
         }
-        rclcpp::Time power_off_time = client->ecu_state->power_off_time;
+        rclcpp::Time power_off_time =
+          convertToRclcppTime(client->ecu_state.power_off_time);
         if (last_power_off_time < power_off_time) {
           last_power_off_time = power_off_time;
         }
@@ -237,7 +251,12 @@ void BootShutdownManager::onTimer()
   // Update detail
   ecu_state_summary_.details.clear();
   for (auto & [ecu_name, client] : ecu_client_queue_) {
-    ecu_state_summary_.details.push_back(*client->ecu_state);
+    EcuState ecu_state;
+    ecu_state.name = ecu_name;
+    ecu_state.state = client->ecu_state.state;
+    ecu_state.power_off_time = convertToRclcppTime(client->ecu_state.power_off_time);
+
+    ecu_state_summary_.details.push_back(ecu_state);
   }
 
   pub_ecu_state_summary_->publish(ecu_state_summary_);
@@ -246,7 +265,7 @@ void BootShutdownManager::onTimer()
 bool BootShutdownManager::isRunning() const
 {
   for (const auto & [ecu_name, client] : ecu_client_queue_) {
-    if (client->ecu_state->state != EcuState::RUNNING) {
+    if (client->ecu_state.state != EcuStateType::RUNNING) {
       return false;
     }
   }
@@ -264,7 +283,7 @@ bool BootShutdownManager::isReady() const
     if (client->skip_shutdown) {
       continue;
     }
-    if (client->ecu_state->state != EcuState::SHUTDOWN_READY) {
+    if (client->ecu_state.state != EcuStateType::SHUTDOWN_READY) {
       return false;
     }
   }
@@ -275,24 +294,36 @@ void BootShutdownManager::executeShutdown()
 {
   RCLCPP_INFO(get_logger(), "ExecuteShutdown start");
   rclcpp::Time latest_power_off_time = now();
-  auto req = std::make_shared<ExecuteShutdown::Request>();
+
   for (auto & [ecu_name, client] : ecu_client_queue_) {
     if (client->skip_shutdown) {
       continue;
     }
-    auto resp = call<ExecuteShutdown>(client->cli_execute, req);
-    if (!resp) {
-      RCLCPP_WARN(get_logger(), "[%s] ExecuteShutdown service call faild.", ecu_name.c_str());
-      // Prevent process ressart due to null access when ECU is not running
-      continue;
-    }
-    rclcpp::Time power_off_time = resp->power_off_time;
-    if (latest_power_off_time < power_off_time) {
-      latest_power_off_time = power_off_time;
+
+    try {
+      ExecuteShutdownService req;
+      auto resp = client->cli_execute->call(req);
+      rclcpp::Time power_off_time = convertToRclcppTime(resp.power_off_time);
+      if (latest_power_off_time < power_off_time) {
+        latest_power_off_time = power_off_time;
+      }
+    } catch (const std::runtime_error & e) {
+      RCLCPP_WARN(get_logger(), "Error: %s", e.what());
+    } catch (...) {
+      RCLCPP_WARN(get_logger(), "Unknown error occurred.");
     }
   }
+
   is_shutting_down = true;
   ecu_state_summary_.summary.power_off_time = latest_power_off_time;
+}
+
+rclcpp::Time BootShutdownManager::convertToRclcppTime(
+  const std::chrono::system_clock::time_point & time_point)
+{
+  auto duration = time_point.time_since_epoch();
+  auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count();
+  return rclcpp::Time(nanoseconds, RCL_SYSTEM_TIME);
 }
 
 }  // namespace boot_shutdown_manager

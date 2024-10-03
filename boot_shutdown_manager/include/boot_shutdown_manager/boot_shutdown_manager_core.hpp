@@ -15,14 +15,22 @@
 #ifndef BOOT_SHUTDOWN_MANAGER__BOOT_SHUTDOWN_MANAGER_HPP_
 #define BOOT_SHUTDOWN_MANAGER__BOOT_SHUTDOWN_MANAGER_HPP_
 
-#include <rclcpp/rclcpp.hpp>
-#include <std_srvs/srv/set_bool.hpp>
+#include "boot_shutdown_udp/service_client.hpp"
+#include "boot_shutdown_udp/topic_subscriber.hpp"
 
+#include <rclcpp/rclcpp.hpp>
+
+#include "boot_shutdown_internal_msgs/msg/ecu_state_message.hpp"
+#include "boot_shutdown_internal_msgs/srv/execute_shutdown_service.hpp"
+#include "boot_shutdown_internal_msgs/srv/prepare_shutdown_service.hpp"
 #include <boot_shutdown_api_msgs/msg/ecu_state.hpp>
 #include <boot_shutdown_api_msgs/msg/ecu_state_summary.hpp>
 #include <boot_shutdown_api_msgs/srv/execute_shutdown.hpp>
 #include <boot_shutdown_api_msgs/srv/prepare_shutdown.hpp>
 #include <boot_shutdown_api_msgs/srv/shutdown.hpp>
+#include <std_srvs/srv/set_bool.hpp>
+
+#include <boost/asio.hpp>
 
 #include <deque>
 
@@ -30,16 +38,21 @@ namespace boot_shutdown_manager
 {
 using boot_shutdown_api_msgs::msg::EcuState;
 using boot_shutdown_api_msgs::msg::EcuStateSummary;
-using boot_shutdown_api_msgs::srv::ExecuteShutdown;
-using boot_shutdown_api_msgs::srv::PrepareShutdown;
 using boot_shutdown_api_msgs::srv::Shutdown;
+
+using boot_shutdown_internal_msgs::srv::ExecuteShutdownService;
+using boot_shutdown_internal_msgs::srv::PrepareShutdownService;
+using boot_shutdown_udp::ServiceClient;
+using boot_shutdown_udp::TopicSubscriber;
+using boot_shutdown_internal_msgs::msg::EcuStateType;
+using boot_shutdown_internal_msgs::msg::EcuStateMessage;
 
 struct EcuClient
 {
-  EcuState::SharedPtr ecu_state;
-  rclcpp::Subscription<EcuState>::SharedPtr sub_ecu_state;
-  rclcpp::Client<ExecuteShutdown>::SharedPtr cli_execute;
-  rclcpp::Client<PrepareShutdown>::SharedPtr cli_prepare;
+  EcuStateMessage ecu_state;
+  TopicSubscriber<EcuStateMessage>::SharedPtr sub_ecu_state;
+  ServiceClient<ExecuteShutdownService>::SharedPtr cli_execute;
+  ServiceClient<PrepareShutdownService>::SharedPtr cli_prepare;
   bool primary;
   bool skip_shutdown;
 };
@@ -48,6 +61,7 @@ class BootShutdownManager : public rclcpp::Node
 {
 public:
   BootShutdownManager();
+  ~BootShutdownManager();
 
 private:
   rclcpp::Publisher<EcuStateSummary>::SharedPtr pub_ecu_state_summary_;
@@ -67,6 +81,8 @@ private:
   double preparation_timeout_;
   bool is_shutting_down;
   bool is_force_shutdown_;
+  boost::asio::io_context io_context_;
+  std::thread io_thread_;
 
   void onShutdownService(
     Shutdown::Request::SharedPtr request, Shutdown::Response::SharedPtr response);
@@ -77,6 +93,8 @@ private:
   bool isRunning() const;
   bool isReady() const;
   void executeShutdown();
+
+  rclcpp::Time convertToRclcppTime(const std::chrono::system_clock::time_point &time_point);
 };
 
 }  // namespace boot_shutdown_manager
