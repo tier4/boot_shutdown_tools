@@ -32,9 +32,11 @@ public:
 
   static SharedPtr create_client(
     const std::string & service_name, boost::asio::io_context & io_context,
-    unsigned short server_port)
+    unsigned short server_port,
+    std::chrono::steady_clock::duration timeout_duration = std::chrono::seconds(1))
   {
-    return SharedPtr(new ServiceClient<ServiceType>(service_name, io_context, server_port));
+    return SharedPtr(
+      new ServiceClient<ServiceType>(service_name, io_context, server_port, timeout_duration));
   }
 
   ServiceType call(const ServiceType & service_request)
