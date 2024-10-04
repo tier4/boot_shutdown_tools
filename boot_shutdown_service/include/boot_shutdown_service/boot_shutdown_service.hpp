@@ -30,7 +30,7 @@
 namespace boot_shutdown_service
 {
 
-using boot_shutdown_internal_msgs::msg::EcuState;
+using boot_shutdown_internal_msgs::msg::EcuStateType;
 using boot_shutdown_internal_msgs::msg::EcuStateMessage;
 using boot_shutdown_internal_msgs::srv::ExecuteShutdownService;
 using boot_shutdown_internal_msgs::srv::PrepareShutdownService;
