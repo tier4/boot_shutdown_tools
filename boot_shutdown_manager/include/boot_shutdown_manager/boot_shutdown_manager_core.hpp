@@ -40,12 +40,12 @@ using boot_shutdown_api_msgs::msg::EcuState;
 using boot_shutdown_api_msgs::msg::EcuStateSummary;
 using boot_shutdown_api_msgs::srv::Shutdown;
 
+using boot_shutdown_internal_msgs::msg::EcuStateMessage;
+using boot_shutdown_internal_msgs::msg::EcuStateType;
 using boot_shutdown_internal_msgs::srv::ExecuteShutdownService;
 using boot_shutdown_internal_msgs::srv::PrepareShutdownService;
 using boot_shutdown_udp::ServiceClient;
 using boot_shutdown_udp::TopicSubscriber;
-using boot_shutdown_internal_msgs::msg::EcuStateType;
-using boot_shutdown_internal_msgs::msg::EcuStateMessage;
 
 struct EcuClient
 {
@@ -81,8 +81,12 @@ private:
   double preparation_timeout_;
   bool is_shutting_down;
   bool is_force_shutdown_;
+
   boost::asio::io_context io_context_;
   std::thread io_thread_;
+  unsigned short server_port_;
+  int server_timeout_;
+  unsigned short publisher_port_;
 
   void onShutdownService(
     Shutdown::Request::SharedPtr request, Shutdown::Response::SharedPtr response);
@@ -94,7 +98,7 @@ private:
   bool isReady() const;
   void executeShutdown();
 
-  rclcpp::Time convertToRclcppTime(const std::chrono::system_clock::time_point &time_point);
+  rclcpp::Time convertToRclcppTime(const std::chrono::system_clock::time_point & time_point);
 };
 
 }  // namespace boot_shutdown_manager
