@@ -63,6 +63,9 @@ BootShutdownManager::BootShutdownManager()
   get_parameter_or("update_rate", update_rate_, 1.0);
   get_parameter_or("startup_timeout", startup_timeout_, 300.0);
   get_parameter_or("preparation_timeout", preparation_timeout_, 60.0);
+  get_parameter_or("server_port", server_port_, static_cast<unsigned short>(10000));
+  get_parameter_or("server_timeout", server_timeout_, 1);
+  get_parameter_or("publisher_port", publisher_port_, static_cast<unsigned short>(10001));
 
   ecu_state_summary_.summary.state = EcuState::STARTUP;
   last_transition_stamp_ = now();
@@ -114,11 +117,11 @@ BootShutdownManager::BootShutdownManager()
     {
       client->skip_shutdown = skip_shutdown;
       client->cli_execute = ServiceClient<ExecuteShutdownService>::create_client(
-        execute_service_name, io_context_, 10000);
+        execute_service_name, io_context_, server_port_, std::chrono::seconds(server_timeout_));
       client->cli_prepare = ServiceClient<PrepareShutdownService>::create_client(
-        prepare_service_name, io_context_, 10000);
+        prepare_service_name, io_context_, server_port_, std::chrono::seconds(server_timeout_));
       client->sub_ecu_state = TopicSubscriber<EcuStateMessage>::create_subscription(
-        state_topic_name, io_context_, 10001,
+        state_topic_name, io_context_, publisher_port_,
         [this, client](const EcuStateMessage & message) { client->ecu_state = message; });
       client->ecu_state.state = EcuStateType::UNKNOWN;
       client->ecu_state.name = ecu_name;

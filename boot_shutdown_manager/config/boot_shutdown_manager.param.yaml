@@ -19,6 +19,9 @@
     update_rate: 1.0
     startup_timeout: 60.0
     preparation_timeout: 10.0
+    server_port_: 10000
+    server_timeout: 1
+    publisher_port: 10001
     managed_ecu:
       autoware_ecu:
         state: /autoware_ecu/get/ecu_state
