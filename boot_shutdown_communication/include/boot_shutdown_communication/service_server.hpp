@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef BOOT_SHUTDOWN_UDP__BOOT_SHUTDOWN_SERVICE_SERVER_HPP_
-#define BOOT_SHUTDOWN_UDP__BOOT_SHUTDOWN_SERVICE_SERVER_HPP_
+#ifndef BOOT_SHUTDOWN_COMMUNICATION__SERVICE_SERVER_HPP_
+#define BOOT_SHUTDOWN_COMMUNICATION__SERVICE_SERVER_HPP_
 
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
@@ -21,7 +21,7 @@
 
 #include <iostream>
 
-namespace boot_shutdown_udp
+namespace boot_shutdown_communication
 {
 
 template <typename ServiceType>
@@ -112,6 +112,6 @@ private:
   }
 };
 
-}  // namespace boot_shutdown_udp
+}  // namespace boot_shutdown_communication
 
-#endif  // BOOT_SHUTDOWN_UDP__BOOT_SHUTDOWN_SERVICE_SERVER_HPP_
+#endif  // BOOT_SHUTDOWN_COMMUNICATION__SERVICE_SERVER_HPP_

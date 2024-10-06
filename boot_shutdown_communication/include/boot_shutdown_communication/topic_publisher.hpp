@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef BOOT_SHUTDOWN_UDP__BOOT_SHUTDOWN_TOPIC_PUBLISHER_HPP_
-#define BOOT_SHUTDOWN_UDP__BOOT_SHUTDOWN_TOPIC_PUBLISHER_HPP_
+#ifndef BOOT_SHUTDOWN_COMMUNICATION__TOPIC_PUBLISHER_HPP_
+#define BOOT_SHUTDOWN_COMMUNICATION__TOPIC_PUBLISHER_HPP_
 
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/asio.hpp>
 
 #include <string>
 
-namespace boot_shutdown_udp
+namespace boot_shutdown_communication
 {
 
 template <typename TopicType>
@@ -61,6 +61,6 @@ private:
   }
 };
 
-}  // namespace boot_shutdown_udp
+}  // namespace boot_shutdown_communication
 
-#endif  // BOOT_SHUTDOWN_UDP__BOOT_SHUTDOWN_TOPIC_PUBLISHER_HPP_
+#endif  // BOOT_SHUTDOWN_COMMUNICATION__TOPIC_PUBLISHER_HPP_
