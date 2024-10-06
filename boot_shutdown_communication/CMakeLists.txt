@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10.2)
-project(boot_shutdown_udp)
+project(boot_shutdown_communication)
 
 add_library(${PROJECT_NAME} INTERFACE)
 
