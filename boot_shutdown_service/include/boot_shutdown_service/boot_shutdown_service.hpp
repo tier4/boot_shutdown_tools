@@ -16,8 +16,8 @@
 #define BOOT_SHUTDOWN__SERVICE__BOOT_SHUTDOWN_SERVICE_HPP_
 
 #include "boot_shutdown_service/parameter.hpp"
-#include "boot_shutdown_udp/service_server.hpp"
-#include "boot_shutdown_udp/topic_publisher.hpp"
+#include "boot_shutdown_communication/service_server.hpp"
+#include "boot_shutdown_communication/topic_publisher.hpp"
 
 #include "boot_shutdown_internal_msgs/msg/ecu_state_message.hpp"
 #include "boot_shutdown_internal_msgs/srv/execute_shutdown_service.hpp"
@@ -34,8 +34,8 @@ using boot_shutdown_internal_msgs::msg::EcuStateType;
 using boot_shutdown_internal_msgs::msg::EcuStateMessage;
 using boot_shutdown_internal_msgs::srv::ExecuteShutdownService;
 using boot_shutdown_internal_msgs::srv::PrepareShutdownService;
-using boot_shutdown_udp::ServiceServer;
-using boot_shutdown_udp::TopicPublisher;
+using boot_shutdown_communication::ServiceServer;
+using boot_shutdown_communication::TopicPublisher;
 
 class BootShutdownService
 {
