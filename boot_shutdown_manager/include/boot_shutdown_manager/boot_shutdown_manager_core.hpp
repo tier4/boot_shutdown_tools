@@ -15,8 +15,8 @@
 #ifndef BOOT_SHUTDOWN_MANAGER__BOOT_SHUTDOWN_MANAGER_HPP_
 #define BOOT_SHUTDOWN_MANAGER__BOOT_SHUTDOWN_MANAGER_HPP_
 
-#include "boot_shutdown_udp/service_client.hpp"
-#include "boot_shutdown_udp/topic_subscriber.hpp"
+#include "boot_shutdown_communication/service_client.hpp"
+#include "boot_shutdown_communication/topic_subscriber.hpp"
 
 #include <rclcpp/rclcpp.hpp>
 
@@ -44,8 +44,8 @@ using boot_shutdown_internal_msgs::msg::EcuStateMessage;
 using boot_shutdown_internal_msgs::msg::EcuStateType;
 using boot_shutdown_internal_msgs::srv::ExecuteShutdownService;
 using boot_shutdown_internal_msgs::srv::PrepareShutdownService;
-using boot_shutdown_udp::ServiceClient;
-using boot_shutdown_udp::TopicSubscriber;
+using boot_shutdown_communication::ServiceClient;
+using boot_shutdown_communication::TopicSubscriber;
 
 struct EcuClient
 {

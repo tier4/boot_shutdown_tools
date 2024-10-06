@@ -15,9 +15,9 @@ ament_auto_add_executable(boot_shutdown_manager
 
 target_include_directories(boot_shutdown_manager PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../boot_shutdown_internal_msgs/include>"
-  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../boot_shutdown_udp/include>"
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../boot_shutdown_communication/include>"
   "$<INSTALL_INTERFACE:include/boot_shutdown_internal_msgs>"
-  "$<INSTALL_INTERFACE:include/boot_shutdown_udp>"
+  "$<INSTALL_INTERFACE:include/boot_shutdown_communication>"
 )
 
 target_link_libraries(boot_shutdown_manager
