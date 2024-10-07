@@ -40,12 +40,12 @@ using boot_shutdown_api_msgs::msg::EcuState;
 using boot_shutdown_api_msgs::msg::EcuStateSummary;
 using boot_shutdown_api_msgs::srv::Shutdown;
 
+using boot_shutdown_communication::ServiceClient;
+using boot_shutdown_communication::TopicSubscriber;
 using boot_shutdown_internal_msgs::msg::EcuStateMessage;
 using boot_shutdown_internal_msgs::msg::EcuStateType;
 using boot_shutdown_internal_msgs::srv::ExecuteShutdownService;
 using boot_shutdown_internal_msgs::srv::PrepareShutdownService;
-using boot_shutdown_communication::ServiceClient;
-using boot_shutdown_communication::TopicSubscriber;
 
 struct EcuClient
 {
@@ -84,9 +84,8 @@ private:
 
   boost::asio::io_context io_context_;
   std::thread io_thread_;
-  unsigned short server_port_;
-  int server_timeout_;
-  unsigned short publisher_port_;
+  unsigned short topic_port_;
+  int service_timeout_;
 
   void onShutdownService(
     Shutdown::Request::SharedPtr request, Shutdown::Response::SharedPtr response);
