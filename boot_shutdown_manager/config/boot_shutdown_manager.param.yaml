@@ -5,6 +5,9 @@
 #       prepare: {PrepareShutdown service name}
 #       execute: {Executeshutdown service name}
 #       skip_shutdown: {when true, the manager do not execute shutdown for this unit}
+#       service_address: nNetwork address used to interact with the ECU’s shutdown-related services
+#       prepare_shutdown_port: Port number used for the shutdown preparation service of the ECU
+#       execute_shutdown_port: Port number used for the shutdown execution service of the ECU
 #
 # Note:
 # default values are:
@@ -13,18 +16,25 @@
 #   execute: /api/{ecu_name}/execute_shutdown
 #   primary: false
 #   skip_shutdown: false
+#   service_address: 127.0.0.1
+#   prepare_shutdown_port: 10001
+#   execute_shutdown_port: 10002
 ---
 /**:
   ros__parameters:
     update_rate: 1.0
     startup_timeout: 60.0
     preparation_timeout: 10.0
+    topic_port: 10000
+    service_timeout: 1
     managed_ecu:
       autoware_ecu:
         state: /autoware_ecu/get/ecu_state
         prepare: /api/autoware_ecu/prepare_shutdown
         execute: /api/autoware_ecu/execute_shutdown
         primary: true
+        service_address: 192.168.20.11
       mot:
         skip_shutdown: true 
-      logging: default
+      logging:
+        service_address: 192.168.20.71
