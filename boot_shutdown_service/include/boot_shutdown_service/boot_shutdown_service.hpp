@@ -63,8 +63,12 @@ protected:
   std::string config_yaml_path_;
   Parameter parameter_{config_yaml_path_};
 
-  unsigned short server_port_;
-  unsigned short publisher_port_;
+  std::string topic_address_;
+  unsigned short topic_port_;
+
+  unsigned short prepare_shutdown_port_;
+  unsigned short execute_shutdown_port_;
+
   std::vector<std::string> prepare_shutdown_command_;
   unsigned int startup_timeout_;
   unsigned int prepare_shutdown_time_;

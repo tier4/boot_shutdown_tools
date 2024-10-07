@@ -27,8 +27,10 @@ namespace boot_shutdown_service
 
 BootShutdownService::BootShutdownService(const std::string & config_yaml_path)
 : config_yaml_path_(config_yaml_path),
-  server_port_(parameter_.declare_parameter("server_port", 10000)),
-  publisher_port_(parameter_.declare_parameter("publisher_port", 10001)),
+  topic_address_(parameter_.declare_parameter("topic_address", std::string(""))),
+  topic_port_(parameter_.declare_parameter("topic_port", 10000)),
+  prepare_shutdown_port_(parameter_.declare_parameter("prepare_shutdown_port", 10001)),
+  execute_shutdown_port_(parameter_.declare_parameter("execute_shutdown_port", 10002)),
   startup_timeout_(parameter_.declare_parameter("startup_timeout", 180)),
   prepare_shutdown_time_(parameter_.declare_parameter("prepare_shutdown_time", 1)),
   execute_shutdown_time_(parameter_.declare_parameter("execute_shutdown_time", 13)),
@@ -50,14 +52,14 @@ bool BootShutdownService::initialize()
   using std::placeholders::_2;
 
   srv_prepare_shutdown_ = ServiceServer<PrepareShutdownService>::create_service(
-    fmt::format("/api/{}/prepare_shutdown", hostname), io_context_, server_port_,
+    fmt::format("/api/{}/prepare_shutdown", hostname), io_context_, prepare_shutdown_port_,
     std::bind(&BootShutdownService::onPrepareShutdown, this, _1, _2));
   srv_execute_shutdown_ = ServiceServer<ExecuteShutdownService>::create_service(
-    fmt::format("/api/{}/execute_shutdown", hostname), io_context_, server_port_,
+    fmt::format("/api/{}/execute_shutdown", hostname), io_context_, execute_shutdown_port_,
     std::bind(&BootShutdownService::onExecuteShutdown, this, _1, _2));
 
   pub_ecu_state_ = TopicPublisher<EcuStateMessage>::create_publisher(
-    fmt::format("/{}/get/ecu_state", hostname), io_context_, publisher_port_);
+    fmt::format("/{}/get/ecu_state", hostname), io_context_, topic_address_, topic_port_);
 
   startTimer();
 
@@ -145,8 +147,6 @@ void BootShutdownService::prepareShutdown()
 {
   is_ready_ = false;
 
-  std::cout << "Preparing shutdown..." << std::endl;
-
   std::thread thread([this] {
     for (const auto & command : prepare_shutdown_command_) {
       if (!command.empty()) {
@@ -169,8 +169,6 @@ void BootShutdownService::prepareShutdown()
 
 void BootShutdownService::executeShutdown()
 {
-  std::cout << "Executing shutdown..." << std::endl;
-
   std::thread thread([this] {
     boost::process::child c("/bin/sh", "-c", "shutdown -h now");
     c.wait();
