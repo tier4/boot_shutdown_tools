@@ -54,7 +54,7 @@ public:
     ar & message;
   }
 
-  bool success;
+  int success;
   Code code;
   std::string message;
 };
