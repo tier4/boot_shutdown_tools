@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>boot_shutdown_communication</name>
+  <version>0.1.0</version>
+  <description>The boot_shutdown_communication package</description>
+  <maintainer email="fumihito.ito@tier4.jp">Fumihito Ito</maintainer>
+
+  <license>Apache License 2.0</license>
+
+  <buildtool_depend>cmake</buildtool_depend>
+
+  <depend>boost</depend>
+  <depend>boot_shutdown_internal_msgs</depend>
+
+  <export>
+    <build_type>cmake</build_type>
+  </export>
+</package>
