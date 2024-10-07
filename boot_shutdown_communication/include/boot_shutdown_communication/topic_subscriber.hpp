@@ -34,8 +34,34 @@ public:
     const std::string & topic_name, boost::asio::io_context & io_context, unsigned short port,
     SubscriptionCallback subscription_callback)
   {
-    return SharedPtr(
-      new TopicSubscriber<TopicType>(topic_name, io_context, port, subscription_callback));
+    static std::once_flag flag;
+    std::call_once(
+      flag, [&]() { instance_ = SharedPtr(new TopicSubscriber<TopicType>(io_context, port)); });
+
+    instance_->add_subscription(topic_name, subscription_callback);
+    return instance_;
+  }
+
+private:
+  static SharedPtr instance_;
+  boost::asio::ip::udp::socket socket_;
+  boost::asio::ip::udp::endpoint publisher_endpoint_;
+  std::array<char, 1024> receive_buffer_;
+  std::map<std::string, SubscriptionCallback> subscriptions_;
+
+  TopicSubscriber(boost::asio::io_context & io_context, unsigned short port) : socket_(io_context)
+  {
+    socket_.open(boost::asio::ip::udp::v4());
+
+    socket_.set_option(boost::asio::socket_base::reuse_address(true));
+    socket_.bind(boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port));
+
+    receive();
+  }
+
+  void add_subscription(const std::string & topic_name, SubscriptionCallback subscription_callback)
+  {
+    subscriptions_[topic_name] = subscription_callback;
   }
 
   void receive()
@@ -50,39 +76,27 @@ public:
 
           std::string topic_name;
           TopicType topic;
+          try {
+            archive >> topic_name;
+            archive >> topic;
+          } catch (const std::exception & e) {
+            std::cerr << "Error: " << e.what() << std::endl;
+            std::cerr << "Failed to read topic from archive." << std::endl;
+          }
 
-          archive >> topic_name;
-          archive >> topic;
-
-          if (topic_name == topic_name_) {
-            subscription_callback_(topic);
+          auto callback = subscriptions_.find(topic_name);
+          if (callback != subscriptions_.end()) {
+            callback->second(topic);
           }
         }
 
         receive();
       });
   }
-
-private:
-  std::string topic_name_;
-  boost::asio::ip::udp::socket socket_;
-  boost::asio::ip::udp::endpoint publisher_endpoint_;
-  std::array<char, 1024> receive_buffer_;
-  SubscriptionCallback subscription_callback_;
-
-  TopicSubscriber(
-    const std::string & topic_name, boost::asio::io_context & io_context, unsigned short port,
-    SubscriptionCallback subscription_callback)
-  : topic_name_(topic_name), socket_(io_context), subscription_callback_(subscription_callback)
-  {
-    socket_.open(boost::asio::ip::udp::v4());
-
-    socket_.set_option(boost::asio::socket_base::reuse_address(true));
-    socket_.bind(boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port));
-
-    receive();
-  }
 };
+
+template <typename TopicType>
+typename TopicSubscriber<TopicType>::SharedPtr TopicSubscriber<TopicType>::instance_ = nullptr;
 
 }  // namespace boot_shutdown_communication
 

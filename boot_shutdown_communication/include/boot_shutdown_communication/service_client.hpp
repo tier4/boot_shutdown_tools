@@ -32,11 +32,11 @@ public:
 
   static SharedPtr create_client(
     const std::string & service_name, boost::asio::io_context & io_context,
-    unsigned short server_port,
-    std::chrono::steady_clock::duration timeout_duration = std::chrono::seconds(1))
+    const std::string & service_address, unsigned short service_port,
+    int timeout = std::chrono::seconds(1))
   {
-    return SharedPtr(
-      new ServiceClient<ServiceType>(service_name, io_context, server_port, timeout_duration));
+    return SharedPtr(new ServiceClient<ServiceType>(
+      service_name, io_context, service_address, service_port, timeout));
   }
 
   ServiceType call(const ServiceType & service_request)
@@ -49,85 +49,77 @@ public:
 
     std::string serialized_data = archive_stream.str();
     socket_.send_to(boost::asio::buffer(serialized_data), server_endpoint_);
-    std::cout << "Service request sent. " << service_name_ << std::endl;
+    std::cout << "Service request sent: " << service_name_ << "," << service_address_ << ":"
+              << service_port_ << std::endl;
 
     return receive_response();
   }
 
 private:
   std::string service_name_;
-  unsigned short server_port_;
-  boost::asio::io_context & io_context_;
+  unsigned short service_port_;
   boost::asio::ip::udp::socket socket_;
   boost::asio::ip::udp::endpoint server_endpoint_;
   std::array<char, 1024> receive_buffer_;
-  std::chrono::steady_clock::duration timeout_duration_;
+  std::string service_address_;
+  int timeout_;
+  boost::asio::steady_timer timer_;
+  boost::asio::io_context& io_context_;
 
   ServiceClient(
     const std::string & service_name, boost::asio::io_context & io_context,
-    unsigned short server_port,
-    std::chrono::steady_clock::duration timeout_duration = std::chrono::seconds(1))
+    const std::string & service_address, unsigned short service_port,
+    int timeout)
   : service_name_(service_name),
-    io_context_(io_context),
     socket_(io_context, boost::asio::ip::udp::v4()),
-    server_endpoint_(boost::asio::ip::address_v4::broadcast(), server_port),
-    timeout_duration_(timeout_duration)
+    server_endpoint_(boost::asio::ip::make_address_v4(service_address), service_port),
+    service_address_(service_address),
+    service_port_(service_port),
+    timeout_(timeout),
+    timer_(io_context),
+    io_context_(io_context)
   {
-    socket_.set_option(boost::asio::socket_base::broadcast(true));
   }
 
   ServiceType receive_response()
   {
-    boost::system::error_code error;
+    boost::system::error_code error_code;
     std::size_t bytes_transferred = 0;
 
-    boost::asio::steady_timer timer(io_context_);
-    timer.expires_after(timeout_duration_);
-
-    receive_buffer_.fill(0);
-
-    bool timeout_occurred = false;
-
-    std::mutex mtx;
-    std::condition_variable cv;
-    bool data_received = false;
-
-    auto receive_handler = [&](const boost::system::error_code & ec, std::size_t bytes) {
-      std::lock_guard<std::mutex> lock(mtx);
-      if (!ec) {
-        bytes_transferred = bytes;
-        data_received = true;
-      }
-      cv.notify_one();
-    };
+    timer_.expires_after(std::chrono::seconds(timeout_));
 
     socket_.async_receive_from(
-      boost::asio::buffer(receive_buffer_), server_endpoint_, receive_handler);
+      boost::asio::buffer(receive_buffer_), server_endpoint_,
+      [&](const boost::system::error_code & ec, std::size_t bytes) {
+        error_code = ec;
+        bytes_transferred = bytes;
+        timer_.cancel();
+      });
 
-    timer.async_wait([&](const boost::system::error_code & timer_ec) {
-      std::lock_guard<std::mutex> lock(mtx);
-      if (!data_received) {
-        timeout_occurred = true;
+    timer_.async_wait([&](const boost::system::error_code & ec) {
+      if (!ec) {
         socket_.cancel();
       }
     });
 
-    std::unique_lock<std::mutex> lock(mtx);
-    cv.wait(lock, [&] { return data_received || timeout_occurred; });
-
-    if (timeout_occurred) {
-      throw std::runtime_error("Receive timed out.");
+    while (bytes_transferred == 0 && !error_code) {
+      io_context_.run_one();
     }
 
-    if (error) {
-      throw std::runtime_error("Receive error: " + error.message());
+     if (error_code) {
+      throw std::runtime_error("Receive error: " + error_code.message());
     }
 
     std::istringstream response_stream(std::string(receive_buffer_.data(), bytes_transferred));
     boost::archive::binary_iarchive response_archive(response_stream);
-    ServiceType response;
-    response_archive >> response;
 
+    ServiceType response;
+    try {
+      response_archive >> response;
+    } catch (const std::exception & e) {
+      std::cerr << "Error: " << e.what() << std::endl;
+      std::cerr << "Failed to read service from archive." << std::endl;
+    }
     std::cout << "Service response received." << std::endl;
     return response;
   }
