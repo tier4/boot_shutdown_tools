@@ -30,9 +30,9 @@ public:
   using SharedPtr = std::shared_ptr<TopicPublisher<TopicType>>;
 
   static SharedPtr create_publisher(
-    const std::string & topic_name, boost::asio::io_context & io_context, unsigned short port)
+    const std::string & topic_name, boost::asio::io_context & io_context, const std::string & address, unsigned short port)
   {
-    return SharedPtr(new TopicPublisher<TopicType>(topic_name, io_context, port));
+    return SharedPtr(new TopicPublisher<TopicType>(topic_name, io_context, address, port));
   }
 
   void publish(const TopicType & message)
@@ -52,12 +52,11 @@ private:
   boost::asio::ip::udp::endpoint endpoint_;
 
   TopicPublisher(
-    const std::string & topic_name, boost::asio::io_context & io_context, unsigned short port)
+    const std::string & topic_name, boost::asio::io_context & io_context, const std::string & address, unsigned short port)
   : topic_name_(topic_name),
     socket_(io_context, boost::asio::ip::udp::v4()),
-    endpoint_(boost::asio::ip::address_v4::broadcast(), port)
+    endpoint_(boost::asio::ip::make_address_v4(address), port)
   {
-    socket_.set_option(boost::asio::socket_base::broadcast(true));
   }
 };
 

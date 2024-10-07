@@ -33,10 +33,10 @@ public:
 
   static SharedPtr create_service(
     const std::string & service_name, boost::asio::io_context & io_context,
-    unsigned short server_port, RequestCallback request_callback)
+    unsigned short service_port, RequestCallback request_callback)
   {
     return SharedPtr(
-      new ServiceServer<ServiceType>(service_name, io_context, server_port, request_callback));
+      new ServiceServer<ServiceType>(service_name, io_context, service_port, request_callback));
   }
 
 private:
@@ -48,16 +48,11 @@ private:
 
   ServiceServer(
     const std::string & service_name, boost::asio::io_context & io_context,
-    unsigned short server_port, RequestCallback request_callback)
+    unsigned short service_port, RequestCallback request_callback)
   : service_name_(service_name),
-    socket_(io_context),
+    socket_(io_context, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), service_port)),
     request_callback_(request_callback)
   {
-    socket_.open(boost::asio::ip::udp::v4());
-
-    socket_.set_option(boost::asio::socket_base::reuse_address(true));
-    socket_.bind(boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), server_port));
-
     receive();
   }
 
@@ -67,28 +62,33 @@ private:
 
     socket_.async_receive_from(
       boost::asio::buffer(receive_buffer_), client_endpoint_,
-      [this](const boost::system::error_code & error, std::size_t bytes_transferred) {
-        if (!error) {
+      [this](const boost::system::error_code & error_code, std::size_t bytes_transferred) {
+        if (!error_code) {
           std::istringstream archive_stream(std::string(receive_buffer_.data(), bytes_transferred));
           boost::archive::binary_iarchive archive(archive_stream);
 
           std::string service_name;
           ServiceType request;
+          ServiceType response;
+          try {
+            archive >> service_name;
+            archive >> request;
+          } catch (const std::exception & e) {
+            std::cerr << "Error: " << e.what() << std::endl;
+            std::cerr << "Failed to read service from archive." << std::endl;
+            send_response(response);
+          }
 
-          archive >> service_name;
-          archive >> request;
-
-          std::cout << "Received request. " << service_name << std::endl;
+          std::cout << "Received request: " << service_name << std::endl;
 
           if (service_name == service_name_) {
-            ServiceType response;
             request_callback_(request, response);
             send_response(response);
           }
 
           receive();
         } else {
-          std::cerr << "Receive error: " << error.message() << std::endl;
+          std::cerr << "Receive error: " << error_code.message() << std::endl;
         }
       });
   }
