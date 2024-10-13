@@ -45,6 +45,8 @@ bool BootShutdownService::initialize()
   char hostname[HOST_NAME_MAX + 1];
   gethostname(hostname, sizeof(hostname));
 
+  std::replace(hostname, hostname + sizeof(hostname), '-', '_');
+
   ecu_state_.state = EcuStateType::STARTUP;
   startup_time_ = std::chrono::system_clock::now();
 
