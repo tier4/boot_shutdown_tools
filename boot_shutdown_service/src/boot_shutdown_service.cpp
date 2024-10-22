@@ -38,10 +38,14 @@ BootShutdownService::BootShutdownService(const std::string & config_yaml_path)
     parameter_.declare_parameter("prepare_shutdown_command", std::vector<std::string>())),
   timer_(io_context_)
 {
+  std::signal(SIGINT, signalHandler);
+  std::signal(SIGTERM, signalHandler);
 }
 
 bool BootShutdownService::initialize()
 {
+  instance = this;
+
   char hostname[HOST_NAME_MAX + 1];
   gethostname(hostname, sizeof(hostname));
 
@@ -71,6 +75,23 @@ bool BootShutdownService::initialize()
 void BootShutdownService::run()
 {
   io_context_.run();
+}
+
+void BootShutdownService::shutdown()
+{
+  if (!io_context_.stopped()) {
+    std::cout << "Shutting down service..." << std::endl;
+    io_context_.stop();
+  }
+}
+
+void BootShutdownService::signalHandler(int signum)
+{
+  std::cout << "Signal received: " << signum << std::endl;
+
+  if (instance) {
+    instance->shutdown();
+  }
 }
 
 void BootShutdownService::onPrepareShutdown(
@@ -147,7 +168,10 @@ void BootShutdownService::publish_ecu_state_message()
 
 void BootShutdownService::prepareShutdown()
 {
-  is_ready_ = false;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    is_ready_ = false;
+  }
 
   std::thread thread([this] {
     for (const auto & command : prepare_shutdown_command_) {
@@ -206,5 +230,7 @@ bool BootShutdownService::isReady()
 
   return is_ready;
 }
+
+BootShutdownService * BootShutdownService::instance = nullptr;
 
 }  // namespace boot_shutdown_service

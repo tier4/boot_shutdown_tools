@@ -43,8 +43,11 @@ public:
   explicit BootShutdownService(const std::string & config_yaml_path);
   bool initialize();
   void run();
+  void shutdown();
 
 protected:
+  static void signalHandler(int signum);
+
   void onPrepareShutdown(const PrepareShutdownService & request, PrepareShutdownService & response);
   void onExecuteShutdown(const ExecuteShutdownService & request, ExecuteShutdownService & response);
 
@@ -89,6 +92,8 @@ protected:
 
   std::chrono::system_clock::time_point startup_time_;
   std::chrono::system_clock::time_point prepare_shutdown_start_time_;
+
+  static BootShutdownService* instance;
 };
 
 }  // namespace boot_shutdown_service
