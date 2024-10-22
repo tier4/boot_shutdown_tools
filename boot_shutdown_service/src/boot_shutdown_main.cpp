@@ -59,5 +59,7 @@ int main(int argc, char ** argv)
 
   service.run();
 
+  service.shutdown();
+
   return EXIT_SUCCESS;
 }
