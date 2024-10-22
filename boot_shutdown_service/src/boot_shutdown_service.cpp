@@ -147,7 +147,10 @@ void BootShutdownService::publish_ecu_state_message()
 
 void BootShutdownService::prepareShutdown()
 {
-  is_ready_ = false;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    is_ready_ = false;
+  }
 
   std::thread thread([this] {
     for (const auto & command : prepare_shutdown_command_) {
