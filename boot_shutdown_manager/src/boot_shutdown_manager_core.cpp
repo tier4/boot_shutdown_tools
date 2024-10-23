@@ -126,6 +126,7 @@ BootShutdownManager::BootShutdownManager()
 
     auto client = std::make_shared<EcuClient>();
     {
+      client->primary = primary;
       client->skip_shutdown = skip_shutdown;
       client->cli_execute = ServiceClient<ExecuteShutdownService>::create_client(
         execute_service_name, io_context_, service_address, execute_shutdown_port,
