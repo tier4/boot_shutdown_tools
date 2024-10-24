@@ -39,7 +39,7 @@ public:
       service_name, io_context, service_address, service_port, timeout));
   }
 
-  ServiceType call(const ServiceType & service_request)
+  std::shared_ptr<ServiceType> call(const ServiceType & service_request)
   {
     std::ostringstream archive_stream;
     boost::archive::binary_oarchive archive(archive_stream);
@@ -81,7 +81,7 @@ private:
   {
   }
 
-  ServiceType receive_response()
+  std::shared_ptr<ServiceType> receive_response()
   {
     boost::system::error_code error_code;
     std::size_t bytes_transferred = 0;
@@ -113,12 +113,13 @@ private:
     std::istringstream response_stream(std::string(receive_buffer_.data(), bytes_transferred));
     boost::archive::binary_iarchive response_archive(response_stream);
 
-    ServiceType response;
+    auto response = std::make_shared<ServiceType>();
     try {
-      response_archive >> response;
+      response_archive >> *response;
     } catch (const std::exception & e) {
       std::cerr << "Error: " << e.what() << std::endl;
       std::cerr << "Failed to read service from archive." << std::endl;
+      return nullptr;
     }
     std::cout << "Service response received." << std::endl;
     return response;
