@@ -181,6 +181,10 @@ void BootShutdownManager::onShutdownService(
     try {
       PrepareShutdownService req;
       auto resp = client->cli_prepare->call(req);
+      if (!resp) {
+        RCLCPP_WARN(get_logger(), "prepare shutdown service call faild.");
+        continue;
+      }
     } catch (const std::runtime_error & e) {
       RCLCPP_WARN(get_logger(), "Error: %s", e.what());
     } catch (...) {
@@ -321,7 +325,11 @@ void BootShutdownManager::executeShutdown()
     try {
       ExecuteShutdownService req;
       auto resp = client->cli_execute->call(req);
-      rclcpp::Time power_off_time = convertToRclcppTime(resp.power_off_time);
+      if (!resp) {
+        RCLCPP_WARN(get_logger(), "execute shutdown service call faild.");
+        continue;
+      }
+      rclcpp::Time power_off_time = convertToRclcppTime(resp->power_off_time);
       if (latest_power_off_time < power_off_time) {
         latest_power_off_time = power_off_time;
       }
