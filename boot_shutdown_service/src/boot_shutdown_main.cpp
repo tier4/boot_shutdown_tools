@@ -17,38 +17,33 @@
 #include <errno.h>
 #include <getopt.h>
 #include <string.h>
-#include <syslog.h>
 #include <unistd.h>
 
-/**
- * @brief Print usage
- */
 void usage()
 {
   printf("Usage: msr_reader [options]\n");
   printf("  -h --help   : Display help\n");
-  printf("  -s --socket # : Path of UNIX domain socket.\n");
+  printf("  -c --config : Configuration yaml file path\n");
   printf("\n");
 }
 
 int main(int argc, char ** argv)
 {
   static struct option long_options[] = {
-    {"help", no_argument, 0, 'h'}, {"socket", required_argument, nullptr, 's'}, {0, 0, 0, 0}};
+    {"help", no_argument, 0, 'h'}, {"config", required_argument, nullptr, 'c'}, {0, 0, 0, 0}};
 
-  // Parse command-line options
   int c = 0;
   int option_index = 0;
-  std::string socket_path = boot_shutdown_service::SOCKET_PATH;
+  std::string config_yaml_path;
 
-  while ((c = getopt_long(argc, argv, "hs:", long_options, &option_index)) != -1) {
+  while ((c = getopt_long(argc, argv, "hc:", long_options, &option_index)) != -1) {
     switch (c) {
       case 'h':
         usage();
         return EXIT_SUCCESS;
 
-      case 's':
-        socket_path = optarg;
+      case 'c':
+        config_yaml_path = optarg;
         break;
 
       default:
@@ -56,32 +51,15 @@ int main(int argc, char ** argv)
     }
   }
 
-  // Put the program in the background
-  if (daemon(0, 0) < 0) {
-    printf("Failed to put the program in the background. %s\n", strerror(errno));
-    return errno;
-  }
-
-  // Open connection to system logger
-  openlog(nullptr, LOG_PID, LOG_DAEMON);
-
-  // Initialize boot/shutdown service
-  boot_shutdown_service::BootShutdownService service(socket_path);
+  boot_shutdown_service::BootShutdownService service(config_yaml_path);
 
   if (!service.initialize()) {
-    service.shutdown();
-    closelog();
     return EXIT_FAILURE;
   }
 
-  // Run main loop
   service.run();
 
-  // Shutdown boot/shutdown service
   service.shutdown();
-
-  // Close descriptor used to write to system logger
-  closelog();
 
   return EXIT_SUCCESS;
 }

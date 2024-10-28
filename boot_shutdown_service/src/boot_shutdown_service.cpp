@@ -14,155 +14,169 @@
 
 #include "boot_shutdown_service/boot_shutdown_service.hpp"
 
-#include <boost/archive/text_oarchive.hpp>
 #include <boost/process.hpp>
-#include <boost/serialization/string.hpp>
-#include <boost/serialization/vector.hpp>
 
-#include <errno.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
-#include <sys/un.h>
-#include <syslog.h>
+#include <iostream>
+
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
+#include <yaml-cpp/yaml.h>
 
 namespace boot_shutdown_service
 {
 
-BootShutdownService::BootShutdownService(const std::string & socket_path)
-: socket_path_(socket_path), socket_(-1), connection_(-1)
+BootShutdownService::BootShutdownService(const std::string & config_yaml_path)
+: config_yaml_path_(config_yaml_path),
+  topic_address_(parameter_.declare_parameter("topic_address", std::string(""))),
+  topic_port_(parameter_.declare_parameter("topic_port", 10000)),
+  prepare_shutdown_port_(parameter_.declare_parameter("prepare_shutdown_port", 10001)),
+  execute_shutdown_port_(parameter_.declare_parameter("execute_shutdown_port", 10002)),
+  startup_timeout_(parameter_.declare_parameter("startup_timeout", 180)),
+  prepare_shutdown_time_(parameter_.declare_parameter("prepare_shutdown_time", 1)),
+  execute_shutdown_time_(parameter_.declare_parameter("execute_shutdown_time", 13)),
+  prepare_shutdown_command_(
+    parameter_.declare_parameter("prepare_shutdown_command", std::vector<std::string>())),
+  timer_(io_context_)
 {
+  std::signal(SIGINT, signalHandler);
+  std::signal(SIGTERM, signalHandler);
 }
 
 bool BootShutdownService::initialize()
 {
-  // Remove previous binding
-  remove(socket_path_.c_str());
+  instance = this;
 
-  // Create a new socket
-  socket_ = socket(AF_UNIX, SOCK_STREAM, 0);
-  if (socket_ < 0) {
-    syslog(LOG_ERR, "Failed to create a new socket. %s\n", strerror(errno));
-    return false;
-  }
+  char hostname[HOST_NAME_MAX + 1];
+  gethostname(hostname, sizeof(hostname));
 
-  sockaddr_un addr = {};
-  addr.sun_family = AF_UNIX;
-  strncpy(addr.sun_path, socket_path_.c_str(), sizeof(addr.sun_path) - 1);
+  std::replace(hostname, hostname + sizeof(hostname), '-', '_');
 
-  // Give the socket FD the unix domain socket
-  int ret = bind(socket_, (struct sockaddr *)&addr, sizeof(addr));
-  if (ret < 0) {
-    syslog(LOG_ERR, "Failed to give the socket FD the unix domain socket. %s\n", strerror(errno));
-    shutdown();
-    return false;
-  }
+  ecu_state_.state = EcuStateType::STARTUP;
+  startup_time_ = std::chrono::system_clock::now();
 
-  // Give permission to other users to access to socket
-  if (chmod(socket_path_.c_str(), S_IRWXU | S_IRWXG | S_IRWXO) != 0) {
-    syslog(LOG_ERR, "Failed to give permission to unix domain socket. %s\n", strerror(errno));
-    return false;
-  }
+  using std::placeholders::_1;
+  using std::placeholders::_2;
 
-  // Prepare to accept connections on socket FD
-  ret = listen(socket_, 5);
-  if (ret < 0) {
-    syslog(LOG_ERR, "Failed to prepare to accept connections on socket FD. %s\n", strerror(errno));
-    shutdown();
-    return false;
-  }
+  srv_prepare_shutdown_ = ServiceServer<PrepareShutdownService>::create_service(
+    fmt::format("/api/{}/prepare_shutdown", hostname), io_context_, prepare_shutdown_port_,
+    std::bind(&BootShutdownService::onPrepareShutdown, this, _1, _2));
+  srv_execute_shutdown_ = ServiceServer<ExecuteShutdownService>::create_service(
+    fmt::format("/api/{}/execute_shutdown", hostname), io_context_, execute_shutdown_port_,
+    std::bind(&BootShutdownService::onExecuteShutdown, this, _1, _2));
+
+  pub_ecu_state_ = TopicPublisher<EcuStateMessage>::create_publisher(
+    fmt::format("/{}/get/ecu_state", hostname), io_context_, topic_address_, topic_port_);
+
+  startTimer();
 
   return true;
 }
 
-void BootShutdownService::shutdown() { close(socket_); }
-
 void BootShutdownService::run()
 {
-  sockaddr_un client = {};
-  socklen_t len = sizeof(client);
+  io_context_.run();
+}
 
-  while (true) {
-    // Await a connection on socket FD
-    connection_ = accept(socket_, reinterpret_cast<sockaddr *>(&client), &len);
-    if (connection_ < 0) {
-      syslog(
-        LOG_ERR, "Failed to prepare to accept connections on socket FD. %s\n", strerror(errno));
-      close(connection_);
-      continue;
-    }
-
-    // Receive messages from a socket
-    char buffer[1024]{};
-    int ret = recv(connection_, buffer, sizeof(buffer) - 1, 0);
-    if (ret < 0) {
-      syslog(LOG_ERR, "Failed to recv. %s\n", strerror(errno));
-      close(connection_);
-      continue;
-    }
-    // No data received
-    if (ret == 0) {
-      syslog(LOG_ERR, "No data received.\n");
-      close(connection_);
-      continue;
-    }
-
-    // Handle message
-    handleMessage(buffer);
-
-    close(connection_);
+void BootShutdownService::shutdown()
+{
+  if (!io_context_.stopped()) {
+    std::cout << "Shutting down service..." << std::endl;
+    io_context_.stop();
   }
 }
 
-void BootShutdownService::handleMessage(const char * buffer)
+void BootShutdownService::signalHandler(int signum)
 {
-  uint8_t request_id = Request::NONE;
+  std::cout << "Signal received: " << signum << std::endl;
 
-  // Restore request from ros node
-  std::istringstream in_stream(buffer);
-  boost::archive::text_iarchive archive(in_stream);
-
-  try {
-    archive >> request_id;
-  } catch (const std::exception & e) {
-    syslog(LOG_ERR, "Failed to restore message. %s\n", e.what());
-    return;
-  }
-
-  switch (request_id) {
-    case Request::PREPARE_SHUTDOWN:
-      prepareShutdown(archive);
-      break;
-    case Request::EXECUTE_SHUTDOWN:
-      executeShutdown();
-      break;
-    case Request::IS_READY_TO_SHUTDOWN:
-      isReadyToShutdown();
-      break;
-    default:
-      syslog(LOG_WARNING, "Unknown message. %d\n", request_id);
-      break;
+  if (instance) {
+    instance->shutdown();
   }
 }
 
-void BootShutdownService::prepareShutdown(boost::archive::text_iarchive & archive)
+void BootShutdownService::onPrepareShutdown(
+  const PrepareShutdownService & request, PrepareShutdownService & response)
 {
-  is_ready_ = false;
+  std::cout << "Preparing shutdown..." << std::endl;
 
-  syslog(LOG_INFO, "Preparing shutdown...");
+  {
+    std::lock_guard<std::mutex> lock(ecu_state_mutex_);
+    ecu_state_.state = EcuStateType::SHUTDOWN_PREPARING;
+    prepare_shutdown_start_time_ = std::chrono::system_clock::now();
 
-  std::vector<std::string> commands;
-  try {
-    archive >> commands;
-  } catch (const std::exception & e) {
-    syslog(LOG_ERR, "Failed to restore optional commands. %s\n", e.what());
-    commands.clear();
+    ecu_state_.power_off_time =
+      prepare_shutdown_start_time_ +
+      std::chrono::seconds(prepare_shutdown_time_ + execute_shutdown_time_);
+
+    response.status.success = true;
+    response.power_off_time = ecu_state_.power_off_time;
   }
 
-  std::thread thread([this, commands] {
-    for (const auto & command : commands) {
+  prepareShutdown();
+}
+
+void BootShutdownService::onExecuteShutdown(
+  const ExecuteShutdownService & request, ExecuteShutdownService & response)
+{
+  std::cout << "Executing shutdown..." << std::endl;
+
+  response.status.success = true;
+  response.power_off_time =
+    std::chrono::system_clock::now() + std::chrono::seconds(execute_shutdown_time_);
+
+  executeShutdown();
+}
+
+void BootShutdownService::startTimer()
+{
+  timer_.expires_after(std::chrono::seconds(1));
+  timer_.async_wait([this](const boost::system::error_code & error_code) { onTimer(error_code); });
+}
+
+void BootShutdownService::onTimer(const boost::system::error_code & error_code)
+{
+  if (!error_code) {
+    publish_ecu_state_message();
+    startTimer();
+  } else {
+    std::cerr << "Timer error: " << error_code.message() << std::endl;
+  }
+}
+
+void BootShutdownService::publish_ecu_state_message()
+{
+  std::lock_guard<std::mutex> lock(ecu_state_mutex_);
+  if (
+    ecu_state_.state == EcuStateType::STARTUP ||
+    ecu_state_.state == EcuStateType::STARTUP_TIMEOUT) {
+    if (isRunning()) {
+      ecu_state_.state = EcuStateType::RUNNING;
+    } else if (isStartupTimeout()) {
+      ecu_state_.state = EcuStateType::STARTUP_TIMEOUT;
+    }
+  } else if (
+    ecu_state_.state == EcuStateType::SHUTDOWN_PREPARING ||
+    ecu_state_.state == EcuStateType::SHUTDOWN_TIMEOUT) {
+    if (isReady()) {
+      ecu_state_.state = EcuStateType::SHUTDOWN_READY;
+    } else if (isPreparationTimeout()) {
+      ecu_state_.state = EcuStateType::SHUTDOWN_TIMEOUT;
+    }
+  }
+  pub_ecu_state_->publish(ecu_state_);
+}
+
+void BootShutdownService::prepareShutdown()
+{
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    is_ready_ = false;
+  }
+
+  std::thread thread([this] {
+    for (const auto & command : prepare_shutdown_command_) {
       if (!command.empty()) {
-        syslog(LOG_INFO, "Executing '%s'", command.c_str());
+        std::cout << "Executing '" << command << "'" << std::endl;
         boost::process::child c("/bin/sh", "-c", command);
         c.wait();
       }
@@ -181,8 +195,6 @@ void BootShutdownService::prepareShutdown(boost::archive::text_iarchive & archiv
 
 void BootShutdownService::executeShutdown()
 {
-  syslog(LOG_INFO, "Executing shutdown...");
-
   std::thread thread([this] {
     boost::process::child c("/bin/sh", "-c", "shutdown -h now");
     c.wait();
@@ -191,7 +203,24 @@ void BootShutdownService::executeShutdown()
   thread.detach();
 }
 
-void BootShutdownService::isReadyToShutdown()
+bool BootShutdownService::isRunning()
+{
+  return true;
+}
+
+bool BootShutdownService::isStartupTimeout()
+{
+  return (std::chrono::system_clock::now() - startup_time_) >
+         std::chrono::seconds(startup_timeout_);
+}
+
+bool BootShutdownService::isPreparationTimeout()
+{
+  return (std::chrono::system_clock::now() - prepare_shutdown_start_time_) >
+         std::chrono::seconds(prepare_shutdown_time_);
+}
+
+bool BootShutdownService::isReady()
 {
   bool is_ready = false;
   {
@@ -199,17 +228,9 @@ void BootShutdownService::isReadyToShutdown()
     is_ready = is_ready_;
   }
 
-  // Inform ros node
-  std::ostringstream out_stream;
-  boost::archive::text_oarchive archive(out_stream);
-  archive & Request::IS_READY_TO_SHUTDOWN;
-  archive & is_ready;
-
-  //  Write N bytes of BUF to FD
-  int ret = write(connection_, out_stream.str().c_str(), out_stream.str().length());
-  if (ret < 0) {
-    syslog(LOG_ERR, "Failed to write N bytes of BUF to FD. %s\n", strerror(errno));
-  }
+  return is_ready;
 }
+
+BootShutdownService * BootShutdownService::instance = nullptr;
 
 }  // namespace boot_shutdown_service
