@@ -9,6 +9,7 @@
   <license>Apache License 2.0</license>
 
   <buildtool_depend>cmake</buildtool_depend>
+  <depend>protobuf-dev</depend>
 
   <depend>boost</depend>
 

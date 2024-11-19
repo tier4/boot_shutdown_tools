@@ -15,7 +15,6 @@
 #ifndef BOOT_SHUTDOWN_COMMUNICATION__TOPIC_SUBSCRIBER_HPP_
 #define BOOT_SHUTDOWN_COMMUNICATION__TOPIC_SUBSCRIBER_HPP_
 
-#include <boost/archive/binary_oarchive.hpp>
 #include <boost/asio.hpp>
 
 #include <string>
@@ -69,25 +68,26 @@ private:
     socket_.async_receive_from(
       boost::asio::buffer(receive_buffer_), publisher_endpoint_,
       [&](boost::system::error_code ec, std::size_t bytes_recvd) {
-        if (!ec && bytes_recvd > 0) {
-          std::string received_data(receive_buffer_.data(), bytes_recvd);
-          std::istringstream archive_stream(received_data);
-          boost::archive::binary_iarchive archive(archive_stream);
+        if (ec) {
+          std::cerr << "Receive error: " << ec.message() << std::endl;
+          return;
+        }
+        if (bytes_recvd == 0) {
+          std::cerr << "No data received" << std::endl;
+          receive();
+          return;
+        }
 
-          std::string topic_name;
-          TopicType topic;
-          try {
-            archive >> topic_name;
-            archive >> topic;
-          } catch (const std::exception & e) {
-            std::cerr << "Error: " << e.what() << std::endl;
-            std::cerr << "Failed to read topic from archive." << std::endl;
-          }
+        std::string received_data(receive_buffer_.data(), bytes_recvd);
+        TopicType topic;
 
-          auto callback = subscriptions_.find(topic_name);
+        if (topic.ParseFromString(received_data)) {
+          auto callback = subscriptions_.find(topic.header().name());
           if (callback != subscriptions_.end()) {
             callback->second(topic);
           }
+        } else {
+          std::cerr << "Failed to parse received protobuf data" << std::endl;
         }
 
         receive();

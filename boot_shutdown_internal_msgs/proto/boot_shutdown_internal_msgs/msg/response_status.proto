@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package boot_shutdown_internal_msgs.msg;
+
+enum Code {
+  SERVICE_UNKNOWN = 0;
+  SERVICE_UNREADY = 1;
+  SERVICE_TIMEOUT = 2;
+  TRANSFORM_ERROR = 3;
+  PARAMETER_ERROR = 4;
+  DEPRECATED = 10;
+  NO_EFFECT = 11;
+}
+
+message ResponseStatus {
+  bool success = 1;
+  Code code = 2;
+  string message = 3;
+}

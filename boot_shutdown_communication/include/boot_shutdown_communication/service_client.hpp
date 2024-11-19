@@ -15,8 +15,8 @@
 #ifndef BOOT_SHUTDOWN_COMMUNICATION__SERVICE_CLIENT_HPP_
 #define BOOT_SHUTDOWN_COMMUNICATION__SERVICE_CLIENT_HPP_
 
-#include <boost/archive/binary_iarchive.hpp>
-#include <boost/archive/binary_oarchive.hpp>
+#include "boot_shutdown_communication/utility.hpp"
+
 #include <boost/asio.hpp>
 
 #include <iostream>
@@ -39,15 +39,17 @@ public:
       service_name, io_context, service_address, service_port, timeout));
   }
 
-  std::shared_ptr<ServiceType> call(const ServiceType & service_request)
+  std::shared_ptr<ServiceType> call(ServiceType & service_request)
   {
-    std::ostringstream archive_stream;
-    boost::archive::binary_oarchive archive(archive_stream);
+    set_header(service_request, service_name_);
 
-    archive << service_name_;
-    archive << service_request;
+    std::string serialized_data;
 
-    std::string serialized_data = archive_stream.str();
+    if (!service_request.SerializeToString(&serialized_data)) {
+      std::cerr << "Failed to serialize message: " << service_name_ << std::endl;
+      return nullptr;
+    }
+
     socket_.send_to(boost::asio::buffer(serialized_data), server_endpoint_);
     std::cout << "Service request sent: " << service_name_ << "," << service_address_ << ":"
               << service_port_ << std::endl;
@@ -64,12 +66,11 @@ private:
   std::string service_address_;
   int timeout_;
   boost::asio::steady_timer timer_;
-  boost::asio::io_context& io_context_;
+  boost::asio::io_context & io_context_;
 
   ServiceClient(
     const std::string & service_name, boost::asio::io_context & io_context,
-    const std::string & service_address, unsigned short service_port,
-    int timeout)
+    const std::string & service_address, unsigned short service_port, int timeout)
   : service_name_(service_name),
     socket_(io_context, boost::asio::ip::udp::v4()),
     server_endpoint_(boost::asio::ip::make_address_v4(service_address), service_port),
@@ -106,22 +107,20 @@ private:
       io_context_.run_one();
     }
 
-     if (error_code) {
+    if (error_code) {
       throw std::runtime_error("Receive error: " + error_code.message());
     }
 
-    std::istringstream response_stream(std::string(receive_buffer_.data(), bytes_transferred));
-    boost::archive::binary_iarchive response_archive(response_stream);
-
+    std::string received_data(receive_buffer_.data(), bytes_transferred);
     auto response = std::make_shared<ServiceType>();
-    try {
-      response_archive >> *response;
-    } catch (const std::exception & e) {
-      std::cerr << "Error: " << e.what() << std::endl;
-      std::cerr << "Failed to read service from archive." << std::endl;
-      return nullptr;
+
+    if (!response->ParseFromString(received_data)) {
+      throw std::runtime_error("Failed to parse received protobuf data");
     }
-    std::cout << "Service response received." << std::endl;
+
+    std::cout << "Service response received" << std::endl;
+    std::cout << response->DebugString() << std::endl;
+  
     return response;
   }
 };

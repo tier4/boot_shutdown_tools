@@ -17,8 +17,8 @@
 
 #include "boot_shutdown_communication/service_client.hpp"
 
-#include "boot_shutdown_internal_msgs/srv/execute_shutdown_service.hpp"
-#include "boot_shutdown_internal_msgs/srv/prepare_shutdown_service.hpp"
+#include "boot_shutdown_internal_msgs/execute_shutdown_service.pb.h"
+#include "boot_shutdown_internal_msgs/prepare_shutdown_service.pb.h"
 
 #include <boost/asio.hpp>
 

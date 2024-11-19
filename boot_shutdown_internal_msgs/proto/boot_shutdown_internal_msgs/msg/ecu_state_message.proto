@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package boot_shutdown_internal_msgs.msg;
+
+import "google/protobuf/timestamp.proto";
+import "header.proto";
+
+enum EcuStateType {
+  UNKNOWN = 0;
+  STARTUP = 1;
+  RUNNING = 2;
+  SHUTDOWN_PREPARING = 3;
+  SHUTDOWN_READY = 4;
+  STARTUP_TIMEOUT = 1001;
+  SHUTDOWN_TIMEOUT = 1002;
+}
+
+message EcuStateMessage {
+  boot_shutdown_internal_msgs.msg.Header header = 1;
+  EcuStateType state = 2;
+  string name = 3;
+  string message = 4;
+  google.protobuf.Timestamp power_off_time = 5;
+}

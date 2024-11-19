@@ -15,8 +15,8 @@
 #ifndef BOOT_SHUTDOWN_COMMUNICATION__SERVICE_SERVER_HPP_
 #define BOOT_SHUTDOWN_COMMUNICATION__SERVICE_SERVER_HPP_
 
-#include <boost/archive/binary_iarchive.hpp>
-#include <boost/archive/binary_oarchive.hpp>
+#include "boot_shutdown_communication/utility.hpp"
+
 #include <boost/asio.hpp>
 
 #include <iostream>
@@ -63,42 +63,40 @@ private:
     socket_.async_receive_from(
       boost::asio::buffer(receive_buffer_), client_endpoint_,
       [this](const boost::system::error_code & error_code, std::size_t bytes_transferred) {
-        if (!error_code) {
-          std::istringstream archive_stream(std::string(receive_buffer_.data(), bytes_transferred));
-          boost::archive::binary_iarchive archive(archive_stream);
+        if (error_code) {
+          std::cerr << "Receive error: " << error_code.message() << std::endl;
+          return;
+        }
 
-          std::string service_name;
-          ServiceType request;
-          ServiceType response;
-          try {
-            archive >> service_name;
-            archive >> request;
-          } catch (const std::exception & e) {
-            std::cerr << "Error: " << e.what() << std::endl;
-            std::cerr << "Failed to read service from archive." << std::endl;
-            send_response(response);
-          }
+        ServiceType request;
+        ServiceType response;
 
+        if (request.ParseFromArray(receive_buffer_.data(), bytes_transferred)) {
+          const auto service_name = request.header().name();
           std::cout << "Received request: " << service_name << std::endl;
 
           if (service_name == service_name_) {
+            set_header(response, service_name_);
             request_callback_(request, response);
             send_response(response);
           }
-
-          receive();
         } else {
-          std::cerr << "Receive error: " << error_code.message() << std::endl;
+          std::cerr << "Failed to parse received protobuf data" << std::endl;
         }
+
+        receive();
       });
   }
 
   void send_response(const ServiceType & response)
   {
-    std::ostringstream archive_stream;
-    boost::archive::binary_oarchive archive(archive_stream);
-    archive << response;
-    std::string serialized_data = archive_stream.str();
+    std::string serialized_data;
+    if (!response.SerializeToString(&serialized_data)) {
+      std::cerr << "Failed to serialize response." << std::endl;
+      return;
+    }
+
+    std::cout << response.DebugString() << std::endl;
 
     socket_.async_send_to(
       boost::asio::buffer(serialized_data), client_endpoint_,
@@ -106,7 +104,7 @@ private:
         if (error) {
           std::cerr << "Send error: " << error.message() << std::endl;
         } else {
-          std::cout << "Response sent." << std::endl;
+          std::cout << "Response sent" << std::endl;
         }
       });
   }

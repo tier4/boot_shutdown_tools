@@ -15,13 +15,13 @@
 #ifndef BOOT_SHUTDOWN__SERVICE__BOOT_SHUTDOWN_SERVICE_HPP_
 #define BOOT_SHUTDOWN__SERVICE__BOOT_SHUTDOWN_SERVICE_HPP_
 
-#include "boot_shutdown_service/parameter.hpp"
 #include "boot_shutdown_communication/service_server.hpp"
 #include "boot_shutdown_communication/topic_publisher.hpp"
+#include "boot_shutdown_service/parameter.hpp"
 
-#include "boot_shutdown_internal_msgs/msg/ecu_state_message.hpp"
-#include "boot_shutdown_internal_msgs/srv/execute_shutdown_service.hpp"
-#include "boot_shutdown_internal_msgs/srv/prepare_shutdown_service.hpp"
+#include "boot_shutdown_internal_msgs/ecu_state_message.pb.h"
+#include "boot_shutdown_internal_msgs/execute_shutdown_service.pb.h"
+#include "boot_shutdown_internal_msgs/prepare_shutdown_service.pb.h"
 
 #include <boost/asio.hpp>
 
@@ -30,12 +30,12 @@
 namespace boot_shutdown_service
 {
 
-using boot_shutdown_internal_msgs::msg::EcuStateType;
-using boot_shutdown_internal_msgs::msg::EcuStateMessage;
-using boot_shutdown_internal_msgs::srv::ExecuteShutdownService;
-using boot_shutdown_internal_msgs::srv::PrepareShutdownService;
 using boot_shutdown_communication::ServiceServer;
 using boot_shutdown_communication::TopicPublisher;
+using boot_shutdown_internal_msgs::msg::EcuStateMessage;
+using boot_shutdown_internal_msgs::msg::EcuStateType;
+using boot_shutdown_internal_msgs::srv::ExecuteShutdownService;
+using boot_shutdown_internal_msgs::srv::PrepareShutdownService;
 
 class BootShutdownService
 {
@@ -62,6 +62,10 @@ protected:
   bool isStartupTimeout();
   bool isPreparationTimeout();
   bool isReady();
+
+  void setTimestamp(
+    google::protobuf::Timestamp * timestamp,
+    const std::chrono::system_clock::time_point & time_point);
 
   std::string config_yaml_path_;
   Parameter parameter_{config_yaml_path_};
@@ -93,7 +97,7 @@ protected:
   std::chrono::system_clock::time_point startup_time_;
   std::chrono::system_clock::time_point prepare_shutdown_start_time_;
 
-  static BootShutdownService* instance;
+  static BootShutdownService * instance;
 };
 
 }  // namespace boot_shutdown_service
