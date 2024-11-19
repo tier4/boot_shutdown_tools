@@ -5,12 +5,14 @@ find_package(boot_shutdown_internal_msgs REQUIRED)
 find_package(Threads REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
-add_library(${PROJECT_NAME} SHARED
+add_executable(${PROJECT_NAME}
+  src/boot_shutdown_main.cpp
   src/boot_shutdown_service.cpp
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE
+target_link_libraries(${PROJECT_NAME}
   Threads::Threads
+  pthread
   yaml-cpp
   boot_shutdown_internal_msgs
 )
@@ -28,34 +30,9 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
   BOOST_ERROR_CODE_HEADER_ONLY
 )
 
-add_executable(${PROJECT_NAME}_main
-  src/boot_shutdown_main.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}_main
-  ${PROJECT_NAME}
-  pthread
-  boot_shutdown_internal_msgs
-)
-
-set_target_properties(${PROJECT_NAME}_main PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
-
-
-install(TARGETS ${PROJECT_NAME}
-  EXPORT export_${PROJECT_NAME}
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-)
 install(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
 install(DIRECTORY cmake/ DESTINATION share/${PROJECT_NAME}/cmake)
 
-install(
-  EXPORT export_${PROJECT_NAME}
-  DESTINATION share/${PROJECT_NAME}/cmake
-  NAMESPACE "${PROJECT_NAME}::"
-  FILE "export_${PROJECT_NAME}Export.cmake"
-)
-
-install(TARGETS ${PROJECT_NAME}_main
+install(TARGETS ${PROJECT_NAME}
   RUNTIME DESTINATION bin
 )

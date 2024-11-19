@@ -32,10 +32,3 @@ install(TARGETS ${PROJECT_NAME}
   EXPORT export_${PROJECT_NAME}
   RUNTIME DESTINATION bin
 )
-
-install(
-  EXPORT export_${PROJECT_NAME}
-  DESTINATION share/${PROJECT_NAME}/cmake
-  NAMESPACE "${PROJECT_NAME}::"
-  FILE "export_${PROJECT_NAME}Export.cmake"
-)
