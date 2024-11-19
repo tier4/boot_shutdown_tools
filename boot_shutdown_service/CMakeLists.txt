@@ -1,9 +1,7 @@
 cmake_minimum_required(VERSION 3.10.2)
 project(boot_shutdown_service)
 
-find_package(Boost REQUIRED COMPONENTS
-  serialization
-)
+find_package(boot_shutdown_internal_msgs REQUIRED)
 find_package(Threads REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
@@ -12,14 +10,14 @@ add_library(${PROJECT_NAME} SHARED
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
-  Boost::serialization
   Threads::Threads
   yaml-cpp
+  boot_shutdown_internal_msgs
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../boot_shutdown_internal_msgs/include>"
+  "$<BUILD_INTERFACE:${CMAKE_INSTALL_PREFIX}/../boot_shutdown_internal_msgs/include>"
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../boot_shutdown_communication/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
   "$<INSTALL_INTERFACE:include/boot_shutdown_internal_msgs>"
@@ -37,6 +35,7 @@ add_executable(${PROJECT_NAME}_main
 target_link_libraries(${PROJECT_NAME}_main
   ${PROJECT_NAME}
   pthread
+  boot_shutdown_internal_msgs
 )
 
 set_target_properties(${PROJECT_NAME}_main PROPERTIES OUTPUT_NAME ${PROJECT_NAME})

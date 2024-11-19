@@ -51,7 +51,8 @@ bool BootShutdownService::initialize()
 
   std::replace(hostname, hostname + sizeof(hostname), '-', '_');
 
-  ecu_state_.state = EcuStateType::STARTUP;
+  ecu_state_.set_state(EcuStateType::STARTUP);
+  ecu_state_.set_name(hostname);
   startup_time_ = std::chrono::system_clock::now();
 
   using std::placeholders::_1;
@@ -101,15 +102,17 @@ void BootShutdownService::onPrepareShutdown(
 
   {
     std::lock_guard<std::mutex> lock(ecu_state_mutex_);
-    ecu_state_.state = EcuStateType::SHUTDOWN_PREPARING;
+    ecu_state_.set_state(EcuStateType::SHUTDOWN_PREPARING);
     prepare_shutdown_start_time_ = std::chrono::system_clock::now();
 
-    ecu_state_.power_off_time =
+    auto * status = response.mutable_status();
+    status->set_success(true);
+
+    const auto power_off_time =
       prepare_shutdown_start_time_ +
       std::chrono::seconds(prepare_shutdown_time_ + execute_shutdown_time_);
-
-    response.status.success = true;
-    response.power_off_time = ecu_state_.power_off_time;
+  
+    setTimestamp(response.mutable_power_off_time(), power_off_time);
   }
 
   prepareShutdown();
@@ -120,9 +123,13 @@ void BootShutdownService::onExecuteShutdown(
 {
   std::cout << "Executing shutdown..." << std::endl;
 
-  response.status.success = true;
-  response.power_off_time =
+  auto * status = response.mutable_status();
+  status->set_success(true);
+
+  const auto power_off_time =
     std::chrono::system_clock::now() + std::chrono::seconds(execute_shutdown_time_);
+
+  setTimestamp(response.mutable_power_off_time(), power_off_time);
 
   executeShutdown();
 }
@@ -147,20 +154,20 @@ void BootShutdownService::publish_ecu_state_message()
 {
   std::lock_guard<std::mutex> lock(ecu_state_mutex_);
   if (
-    ecu_state_.state == EcuStateType::STARTUP ||
-    ecu_state_.state == EcuStateType::STARTUP_TIMEOUT) {
+    ecu_state_.state() == EcuStateType::STARTUP ||
+    ecu_state_.state() == EcuStateType::STARTUP_TIMEOUT) {
     if (isRunning()) {
-      ecu_state_.state = EcuStateType::RUNNING;
+      ecu_state_.set_state(EcuStateType::RUNNING);
     } else if (isStartupTimeout()) {
-      ecu_state_.state = EcuStateType::STARTUP_TIMEOUT;
+      ecu_state_.set_state(EcuStateType::STARTUP_TIMEOUT);
     }
   } else if (
-    ecu_state_.state == EcuStateType::SHUTDOWN_PREPARING ||
-    ecu_state_.state == EcuStateType::SHUTDOWN_TIMEOUT) {
+    ecu_state_.state() == EcuStateType::SHUTDOWN_PREPARING ||
+    ecu_state_.state() == EcuStateType::SHUTDOWN_TIMEOUT) {
     if (isReady()) {
-      ecu_state_.state = EcuStateType::SHUTDOWN_READY;
+      ecu_state_.set_state(EcuStateType::SHUTDOWN_READY);
     } else if (isPreparationTimeout()) {
-      ecu_state_.state = EcuStateType::SHUTDOWN_TIMEOUT;
+      ecu_state_.set_state(EcuStateType::SHUTDOWN_TIMEOUT);
     }
   }
   pub_ecu_state_->publish(ecu_state_);
@@ -229,6 +236,19 @@ bool BootShutdownService::isReady()
   }
 
   return is_ready;
+}
+
+void BootShutdownService::setTimestamp(
+  google::protobuf::Timestamp * timestamp, const std::chrono::system_clock::time_point & time_point)
+{
+  const auto seconds =
+    std::chrono::duration_cast<std::chrono::seconds>(time_point.time_since_epoch()).count();
+  const auto nanos =
+    std::chrono::duration_cast<std::chrono::nanoseconds>(time_point.time_since_epoch()).count() %
+    1000000000;
+
+  timestamp->set_seconds(seconds);
+  timestamp->set_nanos(nanos);
 }
 
 BootShutdownService * BootShutdownService::instance = nullptr;

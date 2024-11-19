@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package boot_shutdown_internal_msgs.srv;
+
+import "google/protobuf/timestamp.proto";
+import "header.proto";
+import "response_status.proto";
+
+message ExecuteShutdownService {
+  boot_shutdown_internal_msgs.msg.Header header = 1;
+  boot_shutdown_internal_msgs.msg.ResponseStatus status = 2;
+  google.protobuf.Timestamp power_off_time = 3;
+}

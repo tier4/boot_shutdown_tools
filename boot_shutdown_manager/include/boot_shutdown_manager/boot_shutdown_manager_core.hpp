@@ -20,9 +20,9 @@
 
 #include <rclcpp/rclcpp.hpp>
 
-#include "boot_shutdown_internal_msgs/msg/ecu_state_message.hpp"
-#include "boot_shutdown_internal_msgs/srv/execute_shutdown_service.hpp"
-#include "boot_shutdown_internal_msgs/srv/prepare_shutdown_service.hpp"
+#include "boot_shutdown_internal_msgs/ecu_state_message.pb.h"
+#include "boot_shutdown_internal_msgs/execute_shutdown_service.pb.h"
+#include "boot_shutdown_internal_msgs/prepare_shutdown_service.pb.h"
 #include <boot_shutdown_api_msgs/msg/ecu_state.hpp>
 #include <boot_shutdown_api_msgs/msg/ecu_state_summary.hpp>
 #include <boot_shutdown_api_msgs/srv/execute_shutdown.hpp>
@@ -97,7 +97,7 @@ private:
   bool isReady() const;
   void executeShutdown();
 
-  rclcpp::Time convertToRclcppTime(const std::chrono::system_clock::time_point & time_point);
+  rclcpp::Time convertToRclcppTime(const google::protobuf::Timestamp & proto_time);
 };
 
 }  // namespace boot_shutdown_manager

@@ -11,6 +11,8 @@
 
   <buildtool_depend>cmake</buildtool_depend>
 
+  <depend>boot_shutdown_internal_msgs</depend>
+
   <depend>boost</depend>
 
   <export>

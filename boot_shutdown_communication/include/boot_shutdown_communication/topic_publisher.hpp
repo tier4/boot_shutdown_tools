@@ -15,7 +15,8 @@
 #ifndef BOOT_SHUTDOWN_COMMUNICATION__TOPIC_PUBLISHER_HPP_
 #define BOOT_SHUTDOWN_COMMUNICATION__TOPIC_PUBLISHER_HPP_
 
-#include <boost/archive/binary_oarchive.hpp>
+#include "boot_shutdown_communication/utility.hpp"
+
 #include <boost/asio.hpp>
 
 #include <string>
@@ -30,19 +31,23 @@ public:
   using SharedPtr = std::shared_ptr<TopicPublisher<TopicType>>;
 
   static SharedPtr create_publisher(
-    const std::string & topic_name, boost::asio::io_context & io_context, const std::string & address, unsigned short port)
+    const std::string & topic_name, boost::asio::io_context & io_context,
+    const std::string & address, unsigned short port)
   {
     return SharedPtr(new TopicPublisher<TopicType>(topic_name, io_context, address, port));
   }
 
-  void publish(const TopicType & message)
+  void publish(TopicType & message)
   {
-    std::ostringstream archive_stream;
-    boost::archive::binary_oarchive archive(archive_stream);
-    archive << topic_name_;
-    archive << message;
+    set_header(message, topic_name_);
 
-    std::string serialized_data = archive_stream.str();
+    std::string serialized_data;
+
+    if (!message.SerializeToString(&serialized_data)) {
+      std::cerr << "Failed to serialize message: " << topic_name_ << std::endl;
+      return;
+    }
+
     socket_.send_to(boost::asio::buffer(serialized_data), endpoint_);
   }
 
@@ -52,7 +57,8 @@ private:
   boost::asio::ip::udp::endpoint endpoint_;
 
   TopicPublisher(
-    const std::string & topic_name, boost::asio::io_context & io_context, const std::string & address, unsigned short port)
+    const std::string & topic_name, boost::asio::io_context & io_context,
+    const std::string & address, unsigned short port)
   : topic_name_(topic_name),
     socket_(io_context, boost::asio::ip::udp::v4()),
     endpoint_(boost::asio::ip::make_address_v4(address), port)
