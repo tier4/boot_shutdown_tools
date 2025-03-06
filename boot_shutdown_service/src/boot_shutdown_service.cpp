@@ -113,6 +113,7 @@ void BootShutdownService::onPrepareShutdown(
       std::chrono::seconds(prepare_shutdown_time_ + execute_shutdown_time_);
   
     setTimestamp(response.mutable_power_off_time(), power_off_time);
+    setTimestamp(ecu_state_.mutable_power_off_time(), power_off_time);
   }
 
   prepareShutdown();
