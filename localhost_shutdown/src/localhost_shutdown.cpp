@@ -19,14 +19,18 @@
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
 
-namespace boot_shutdown_service
+namespace localhost_shutdown
 {
 
-LocalhostShutdown::LocalhostShutdown()
-: service_address_(std::string("127.0.0.1")),
-  service_timeout_(1),
-  prepare_shutdown_port_(10001),
-  execute_shutdown_port_(10002)
+LocalhostShutdown::LocalhostShutdown(const std::string & config_yaml_path)
+: config_yaml_path_(config_yaml_path),
+  topic_port_(parameter_.declare_parameter("topic_port", 10000)),
+  service_address_(parameter_.declare_parameter("service_address", std::string("127.0.0.1"))),
+  service_timeout_(parameter_.declare_parameter("service_timeout", 1)),
+  preparation_timeout_(parameter_.declare_parameter("preparation_timeout", 60)),
+  prepare_shutdown_port_(parameter_.declare_parameter("prepare_shutdown_port", 10001)),
+  execute_shutdown_port_(parameter_.declare_parameter("execute_shutdown_port", 10002)),
+  timer_(io_context_)
 {
 }
 
@@ -44,12 +48,22 @@ void LocalhostShutdown::initialize()
     execute_service_name, io_context_, service_address_, execute_shutdown_port_, service_timeout_);
   cli_prepare_ = ServiceClient<PrepareShutdownService>::create_client(
     prepare_service_name, io_context_, service_address_, prepare_shutdown_port_, service_timeout_);
+
+  sub_ecu_state_ = TopicSubscriber<EcuStateMessage>::create_subscription(
+    fmt::format("/{}/get/ecu_state", hostname), io_context_, topic_port_,
+    [this](const EcuStateMessage & message) {
+      std::lock_guard<std::mutex> lock(ecu_state_mutex_);
+      ecu_state_ = message;
+    });
 }
 
 void LocalhostShutdown::run()
 {
   prepareShutdown();
-  executeShutdown();
+  prepare_shutdown_timeout_time_ =
+    std::chrono::steady_clock::now() + std::chrono::seconds(preparation_timeout_);
+  startTimer();
+
   io_context_.run();
 }
 
@@ -77,4 +91,34 @@ void LocalhostShutdown::executeShutdown()
   }
 }
 
-}  // namespace boot_shutdown_service
+void LocalhostShutdown::startTimer()
+{
+  timer_.expires_after(std::chrono::seconds(1));
+  timer_.async_wait([this](const boost::system::error_code & error_code) { onTimer(error_code); });
+}
+
+void LocalhostShutdown::onTimer(const boost::system::error_code & error_code)
+{
+  if (!error_code) {
+    EcuStateMessage ecu_state;
+    {
+      std::lock_guard<std::mutex> lock(ecu_state_mutex_);
+      ecu_state = ecu_state_;
+    }
+    if (ecu_state.state() == EcuStateType::SHUTDOWN_READY) {
+      std::cout << "Shutdown is ready, shutdown." << std::endl;
+      executeShutdown();
+      return;
+    }
+    if (std::chrono::steady_clock::now() >= prepare_shutdown_timeout_time_) {
+      std::cerr << "Shutdown timeout reached, forcing shutdown." << std::endl;
+      executeShutdown();
+      return;
+    }
+    startTimer();
+  } else {
+    std::cerr << "Timer error: " << error_code.message() << std::endl;
+  }
+}
+
+}  // namespace localhost_shutdown

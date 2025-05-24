@@ -21,7 +21,7 @@
 
 void usage()
 {
-  printf("Usage: msr_reader [options]\n");
+  printf("Usage: boot_shutdown_service [options]\n");
   printf("  -h --help   : Display help\n");
   printf("  -c --config : Configuration yaml file path\n");
   printf("\n");

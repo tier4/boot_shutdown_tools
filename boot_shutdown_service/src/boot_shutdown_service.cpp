@@ -27,7 +27,7 @@ namespace boot_shutdown_service
 
 BootShutdownService::BootShutdownService(const std::string & config_yaml_path)
 : config_yaml_path_(config_yaml_path),
-  topic_address_(parameter_.declare_parameter("topic_address", std::string(""))),
+  topic_address_(parameter_.declare_parameter("topic_address", std::vector<std::string>())),
   topic_port_(parameter_.declare_parameter("topic_port", 10000)),
   prepare_shutdown_port_(parameter_.declare_parameter("prepare_shutdown_port", 10001)),
   execute_shutdown_port_(parameter_.declare_parameter("execute_shutdown_port", 10002)),
@@ -65,8 +65,11 @@ bool BootShutdownService::initialize()
     fmt::format("/api/{}/execute_shutdown", hostname), io_context_, execute_shutdown_port_,
     std::bind(&BootShutdownService::onExecuteShutdown, this, _1, _2));
 
-  pub_ecu_state_ = TopicPublisher<EcuStateMessage>::create_publisher(
-    fmt::format("/{}/get/ecu_state", hostname), io_context_, topic_address_, topic_port_);
+  for (const auto & topic_address : topic_address_) {
+    auto pub_ecu_state = TopicPublisher<EcuStateMessage>::create_publisher(
+    fmt::format("/{}/get/ecu_state", hostname), io_context_, topic_address, topic_port_);
+    pub_ecu_state_.push_back(pub_ecu_state);
+  }
 
   startTimer();
 
@@ -171,7 +174,10 @@ void BootShutdownService::publish_ecu_state_message()
       ecu_state_.set_state(EcuStateType::SHUTDOWN_TIMEOUT);
     }
   }
-  pub_ecu_state_->publish(ecu_state_);
+
+  for (const auto & pub_ecu_state : pub_ecu_state_) {
+    pub_ecu_state->publish(ecu_state_);
+  }
 }
 
 void BootShutdownService::prepareShutdown()

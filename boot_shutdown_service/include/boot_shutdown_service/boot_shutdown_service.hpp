@@ -17,7 +17,7 @@
 
 #include "boot_shutdown_communication/service_server.hpp"
 #include "boot_shutdown_communication/topic_publisher.hpp"
-#include "boot_shutdown_service/parameter.hpp"
+#include "boot_shutdown_common/parameter.hpp"
 
 #include "boot_shutdown_internal_msgs/ecu_state_message.pb.h"
 #include "boot_shutdown_internal_msgs/execute_shutdown_service.pb.h"
@@ -30,6 +30,7 @@
 namespace boot_shutdown_service
 {
 
+using boot_shutdown_common::Parameter;
 using boot_shutdown_communication::ServiceServer;
 using boot_shutdown_communication::TopicPublisher;
 using boot_shutdown_internal_msgs::msg::EcuStateMessage;
@@ -70,7 +71,7 @@ protected:
   std::string config_yaml_path_;
   Parameter parameter_{config_yaml_path_};
 
-  std::string topic_address_;
+  std::vector<std::string> topic_address_;
   unsigned short topic_port_;
 
   unsigned short prepare_shutdown_port_;
@@ -86,7 +87,7 @@ protected:
   ServiceServer<PrepareShutdownService>::SharedPtr srv_prepare_shutdown_;
   ServiceServer<ExecuteShutdownService>::SharedPtr srv_execute_shutdown_;
 
-  TopicPublisher<EcuStateMessage>::SharedPtr pub_ecu_state_;
+  std::vector<TopicPublisher<EcuStateMessage>::SharedPtr> pub_ecu_state_;
   EcuStateMessage ecu_state_;
   boost::asio::steady_timer timer_;
   std::mutex ecu_state_mutex_;

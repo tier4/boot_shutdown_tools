@@ -20,9 +20,11 @@ target_link_libraries(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME} PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<BUILD_INTERFACE:${CMAKE_INSTALL_PREFIX}/../boot_shutdown_internal_msgs/include>"
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../boot_shutdown_common/include>"
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../boot_shutdown_communication/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
   "$<INSTALL_INTERFACE:include/boot_shutdown_internal_msgs>"
+  "$<INSTALL_INTERFACE:include/boot_shutdown_common>"
   "$<INSTALL_INTERFACE:include/boot_shutdown_communication>"
 )
 

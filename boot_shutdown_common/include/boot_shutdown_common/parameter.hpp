@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef BOOT_SHUTDOWN__SERVICE__PARAMETER_HPP_
-#define BOOT_SHUTDOWN__SERVICE__PARAMETER_HPP_
+#ifndef BOOT_SHUTDOWN__COMMON__PARAMETER_HPP_
+#define BOOT_SHUTDOWN__COMMON__PARAMETER_HPP_
 
 #include <yaml-cpp/yaml.h>
 
@@ -21,7 +21,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace boot_shutdown_service
+namespace boot_shutdown_common
 {
 
 class Parameter
@@ -57,6 +57,6 @@ private:
   std::unordered_map<std::string, YAML::Node> parameters_;
 };
 
-}  // namespace boot_shutdown_service
+}  // namespace boot_shutdown_common
 
-#endif  // BOOT_SHUTDOWN__SERVICE__PARAMETER_HPP_
+#endif  // BOOT_SHUTDOWN__COMMON__PARAMETER_HPP_
