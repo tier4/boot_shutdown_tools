@@ -71,7 +71,7 @@ protected:
   EcuStateMessage ecu_state_;
   TopicSubscriber<EcuStateMessage>::SharedPtr sub_ecu_state_;
 
-  std::chrono::steady_clock::time_point prepare_shutdown_timeout_time_;
+  std::chrono::system_clock::time_point prepare_shutdown_timeout_time_;
   boost::asio::steady_timer timer_;
   std::mutex ecu_state_mutex_;
 };

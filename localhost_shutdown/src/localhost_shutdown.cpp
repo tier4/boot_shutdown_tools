@@ -59,9 +59,13 @@ void LocalhostShutdown::initialize()
 
 void LocalhostShutdown::run()
 {
-  prepareShutdown();
   prepare_shutdown_timeout_time_ =
-    std::chrono::steady_clock::now() + std::chrono::seconds(preparation_timeout_);
+    std::chrono::system_clock::now() + std::chrono::seconds(preparation_timeout_);
+  prepareShutdown();
+  const auto timeout = std::chrono::system_clock::to_time_t(prepare_shutdown_timeout_time_);
+  std::cout << "Shutdown timeout deadline: "
+            << std::put_time(std::localtime(&timeout), "%Y-%m-%d %H:%M:%S") << std::endl;
+
   startTimer();
 
   io_context_.run();
@@ -72,6 +76,12 @@ void LocalhostShutdown::prepareShutdown()
   try {
     PrepareShutdownService req;
     auto resp = cli_prepare_->call(req);
+    auto * status = resp.get();
+    if (status->status().success()) {
+      const auto & timestamp = status->power_off_time();
+      prepare_shutdown_timeout_time_ = std::chrono::system_clock::time_point{
+        std::chrono::seconds(timestamp.seconds()) + std::chrono::nanoseconds(timestamp.nanos())};
+    }
   } catch (const std::runtime_error & e) {
     std::cerr << "Error: " << e.what() << std::endl;
   } catch (...) {
@@ -106,13 +116,13 @@ void LocalhostShutdown::onTimer(const boost::system::error_code & error_code)
       ecu_state = ecu_state_;
     }
     if (ecu_state.state() == EcuStateType::SHUTDOWN_READY) {
-      std::cout << "Shutdown is ready, shutdown." << std::endl;
-      executeShutdown();
-      return;
+      // std::cout << "Shutdown is ready, shutdown." << std::endl;
+      // executeShutdown();
+      // return;
     }
-    if (std::chrono::steady_clock::now() >= prepare_shutdown_timeout_time_) {
+    if (std::chrono::system_clock::now() >= prepare_shutdown_timeout_time_) {
       std::cerr << "Shutdown timeout reached, forcing shutdown." << std::endl;
-      executeShutdown();
+      // executeShutdown();
       return;
     }
     startTimer();
