@@ -116,13 +116,13 @@ void LocalhostShutdown::onTimer(const boost::system::error_code & error_code)
       ecu_state = ecu_state_;
     }
     if (ecu_state.state() == EcuStateType::SHUTDOWN_READY) {
-      // std::cout << "Shutdown is ready, shutdown." << std::endl;
-      // executeShutdown();
-      // return;
+      std::cout << "Shutdown is ready, shutdown." << std::endl;
+      executeShutdown();
+      return;
     }
     if (std::chrono::system_clock::now() >= prepare_shutdown_timeout_time_) {
       std::cerr << "Shutdown timeout reached, forcing shutdown." << std::endl;
-      // executeShutdown();
+      executeShutdown();
       return;
     }
     startTimer();
