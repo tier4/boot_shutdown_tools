@@ -14,6 +14,7 @@
 
 #include "localhost_shutdown/localhost_shutdown.hpp"
 
+#include <iomanip>
 #include <iostream>
 
 #define FMT_HEADER_ONLY
