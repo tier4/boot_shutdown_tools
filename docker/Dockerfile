@@ -5,6 +5,10 @@ ARG BASE_IMAGE=$BASE_REPOSITORY:$BASE_TAG
 
 FROM $BASE_IMAGE AS base
 
+RUN rm -f /etc/apt/sources.list.d/ros2.list /etc/apt/sources.list.d/ros2.list.save \
+    && rm -f /usr/share/keyrings/ros-archive-keyring.gpg \
+    && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 16FAAD7AF99A65E2
+
 RUN apt-get update \
   && apt-get install -y ca-certificates curl
 # hadolint ignore=SC1091
