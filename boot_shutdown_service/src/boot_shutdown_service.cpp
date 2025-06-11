@@ -36,16 +36,13 @@ BootShutdownService::BootShutdownService(const std::string & config_yaml_path)
   execute_shutdown_time_(parameter_.declare_parameter("execute_shutdown_time", 13)),
   prepare_shutdown_command_(
     parameter_.declare_parameter("prepare_shutdown_command", std::vector<std::string>())),
-  timer_(io_context_)
+  timer_(io_context_),
+  signals_(io_context_, SIGINT, SIGTERM)
 {
-  std::signal(SIGINT, signalHandler);
-  std::signal(SIGTERM, signalHandler);
 }
 
 bool BootShutdownService::initialize()
 {
-  instance = this;
-
   char hostname[HOST_NAME_MAX + 1];
   gethostname(hostname, sizeof(hostname));
 
@@ -67,7 +64,7 @@ bool BootShutdownService::initialize()
 
   for (const auto & topic_address : topic_address_) {
     auto pub_ecu_state = TopicPublisher<EcuStateMessage>::create_publisher(
-    fmt::format("/{}/get/ecu_state", hostname), io_context_, topic_address, topic_port_);
+      fmt::format("/{}/get/ecu_state", hostname), io_context_, topic_address, topic_port_);
     pub_ecu_state_.push_back(pub_ecu_state);
   }
 
@@ -78,6 +75,13 @@ bool BootShutdownService::initialize()
 
 void BootShutdownService::run()
 {
+  signals_.async_wait([this](const boost::system::error_code & error, int signal_number) {
+    if (!error) {
+      std::cout << "Signal received: " << signal_number << std::endl;
+      shutdown();
+    }
+  });
+
   io_context_.run();
 }
 
@@ -86,15 +90,6 @@ void BootShutdownService::shutdown()
   if (!io_context_.stopped()) {
     std::cout << "Shutting down service..." << std::endl;
     io_context_.stop();
-  }
-}
-
-void BootShutdownService::signalHandler(int signum)
-{
-  std::cout << "Signal received: " << signum << std::endl;
-
-  if (instance) {
-    instance->shutdown();
   }
 }
 
@@ -114,7 +109,7 @@ void BootShutdownService::onPrepareShutdown(
     const auto power_off_time =
       prepare_shutdown_start_time_ +
       std::chrono::seconds(prepare_shutdown_time_ + execute_shutdown_time_);
-  
+
     setTimestamp(response.mutable_power_off_time(), power_off_time);
     setTimestamp(ecu_state_.mutable_power_off_time(), power_off_time);
   }
@@ -257,7 +252,5 @@ void BootShutdownService::setTimestamp(
   timestamp->set_seconds(seconds);
   timestamp->set_nanos(nanos);
 }
-
-BootShutdownService * BootShutdownService::instance = nullptr;
 
 }  // namespace boot_shutdown_service

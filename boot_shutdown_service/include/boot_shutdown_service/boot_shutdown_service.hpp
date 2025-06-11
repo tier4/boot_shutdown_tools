@@ -51,8 +51,6 @@ public:
   void shutdown();
 
 private:
-  static void signalHandler(int signum);
-
   void onPrepareShutdown(const PrepareShutdownService & request, PrepareShutdownService & response);
   void onExecuteShutdown(const ExecuteShutdownService & request, ExecuteShutdownService & response);
 
@@ -106,7 +104,7 @@ private:
   std::chrono::system_clock::time_point startup_time_;
   std::chrono::system_clock::time_point prepare_shutdown_start_time_;
 
-  static BootShutdownService * instance;
+  boost::asio::signal_set signals_;
 };
 
 }  // namespace boot_shutdown_service
