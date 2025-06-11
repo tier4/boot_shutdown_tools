@@ -42,10 +42,14 @@ class LocalhostShutdown
 {
 public:
   explicit LocalhostShutdown(const std::string & config_yaml_path);
+  LocalhostShutdown(const LocalhostShutdown&) = delete;
+  LocalhostShutdown(LocalhostShutdown&&) = delete;
+  LocalhostShutdown& operator=(const LocalhostShutdown&) = delete;
+  LocalhostShutdown& operator=(LocalhostShutdown&&) = delete;
   void initialize();
   void run();
 
-protected:
+private:
   void prepareShutdown();
   void executeShutdown();
 

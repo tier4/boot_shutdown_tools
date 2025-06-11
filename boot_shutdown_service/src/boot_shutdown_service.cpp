@@ -217,24 +217,24 @@ void BootShutdownService::executeShutdown()
   thread.detach();
 }
 
-bool BootShutdownService::isRunning()
+bool BootShutdownService::isRunning() const
 {
   return true;
 }
 
-bool BootShutdownService::isStartupTimeout()
+bool BootShutdownService::isStartupTimeout() const
 {
   return (std::chrono::system_clock::now() - startup_time_) >
          std::chrono::seconds(startup_timeout_);
 }
 
-bool BootShutdownService::isPreparationTimeout()
+bool BootShutdownService::isPreparationTimeout() const
 {
   return (std::chrono::system_clock::now() - prepare_shutdown_start_time_) >
          std::chrono::seconds(prepare_shutdown_time_);
 }
 
-bool BootShutdownService::isReady()
+bool BootShutdownService::isReady() const
 {
   bool is_ready = false;
   {

@@ -42,11 +42,15 @@ class BootShutdownService
 {
 public:
   explicit BootShutdownService(const std::string & config_yaml_path);
+  BootShutdownService(const BootShutdownService&) = delete;
+  BootShutdownService(BootShutdownService&&) = delete;
+  BootShutdownService& operator=(const BootShutdownService&) = delete;
+  BootShutdownService& operator=(BootShutdownService&&) = delete;
   bool initialize();
   void run();
   void shutdown();
 
-protected:
+private:
   static void signalHandler(int signum);
 
   void onPrepareShutdown(const PrepareShutdownService & request, PrepareShutdownService & response);
@@ -59,10 +63,10 @@ protected:
   void prepareShutdown();
   void executeShutdown();
 
-  bool isRunning();
-  bool isStartupTimeout();
-  bool isPreparationTimeout();
-  bool isReady();
+  bool isRunning() const;
+  bool isStartupTimeout() const;
+  bool isPreparationTimeout() const;
+  bool isReady() const;
 
   void setTimestamp(
     google::protobuf::Timestamp * timestamp,
@@ -92,7 +96,7 @@ protected:
   boost::asio::steady_timer timer_;
   std::mutex ecu_state_mutex_;
 
-  std::mutex mutex_;
+  mutable std::mutex mutex_;
   bool is_ready_;
 
   std::chrono::system_clock::time_point startup_time_;
