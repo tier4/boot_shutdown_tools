@@ -183,7 +183,7 @@ void BootShutdownService::publish_ecu_state_message()
 void BootShutdownService::prepareShutdown()
 {
   {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(is_ready_mutex_);
     is_ready_ = false;
   }
 
@@ -200,7 +200,7 @@ void BootShutdownService::prepareShutdown()
       c.wait();
     }
 
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(is_ready_mutex_);
     is_ready_ = true;
   });
 
@@ -238,7 +238,7 @@ bool BootShutdownService::isReady() const
 {
   bool is_ready = false;
   {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(is_ready_mutex_);
     is_ready = is_ready_;
   }
 

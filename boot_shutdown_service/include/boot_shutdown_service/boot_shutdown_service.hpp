@@ -92,11 +92,15 @@ private:
   ServiceServer<ExecuteShutdownService>::SharedPtr srv_execute_shutdown_;
 
   std::vector<TopicPublisher<EcuStateMessage>::SharedPtr> pub_ecu_state_;
-  EcuStateMessage ecu_state_;
+  
   boost::asio::steady_timer timer_;
-  std::mutex ecu_state_mutex_;
 
-  mutable std::mutex mutex_;
+  // --- Guarded by ecu_state_mutex_ ---
+  std::mutex ecu_state_mutex_;
+  EcuStateMessage ecu_state_;
+
+  // --- Guarded by is_ready_mutex_ ---
+  mutable std::mutex is_ready_mutex_;
   bool is_ready_;
 
   std::chrono::system_clock::time_point startup_time_;
