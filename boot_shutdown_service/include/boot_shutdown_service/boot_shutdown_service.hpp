@@ -80,10 +80,10 @@ private:
   const unsigned short prepare_shutdown_port_;
   const unsigned short execute_shutdown_port_;
 
-  const std::vector<std::string> prepare_shutdown_command_;
   const unsigned int startup_timeout_;
   const unsigned int prepare_shutdown_time_;
   const unsigned int execute_shutdown_time_;
+  const std::vector<std::string> prepare_shutdown_command_;
 
   boost::asio::io_context io_context_;
 
