@@ -57,16 +57,16 @@ private:
   void startTimer();
   void onTimer(const boost::system::error_code & error_code);
 
-  std::string config_yaml_path_;
+  const std::string config_yaml_path_;
   Parameter parameter_{config_yaml_path_};
 
-  unsigned short topic_port_;
+  const unsigned short topic_port_;
 
-  std::string service_address_;
-  int service_timeout_;
-  int preparation_timeout_;
-  unsigned short prepare_shutdown_port_;
-  unsigned short execute_shutdown_port_;
+  const std::string service_address_;
+  const int service_timeout_;
+  const int preparation_timeout_;
+  const unsigned short prepare_shutdown_port_;
+  const unsigned short execute_shutdown_port_;
 
   boost::asio::io_context io_context_;
 

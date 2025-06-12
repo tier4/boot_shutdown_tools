@@ -71,19 +71,19 @@ private:
     google::protobuf::Timestamp * timestamp,
     const std::chrono::system_clock::time_point & time_point);
 
-  std::string config_yaml_path_;
+  const std::string config_yaml_path_;
   Parameter parameter_{config_yaml_path_};
 
-  std::vector<std::string> topic_address_;
-  unsigned short topic_port_;
+  const std::vector<std::string> topic_address_;
+  const unsigned short topic_port_;
 
-  unsigned short prepare_shutdown_port_;
-  unsigned short execute_shutdown_port_;
+  const unsigned short prepare_shutdown_port_;
+  const unsigned short execute_shutdown_port_;
 
-  std::vector<std::string> prepare_shutdown_command_;
-  unsigned int startup_timeout_;
-  unsigned int prepare_shutdown_time_;
-  unsigned int execute_shutdown_time_;
+  const std::vector<std::string> prepare_shutdown_command_;
+  const unsigned int startup_timeout_;
+  const unsigned int prepare_shutdown_time_;
+  const unsigned int execute_shutdown_time_;
 
   boost::asio::io_context io_context_;
 
