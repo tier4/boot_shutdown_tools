@@ -121,7 +121,7 @@ void LocalhostShutdown::onTimer(const boost::system::error_code & error_code)
       executeShutdown();
       return;
     }
-    if (std::chrono::system_clock::now() >= prepare_shutdown_timeout_time_) {
+    else if (std::chrono::system_clock::now() >= prepare_shutdown_timeout_time_) {
       std::cerr << "Shutdown timeout reached, forcing shutdown." << std::endl;
       executeShutdown();
       return;
