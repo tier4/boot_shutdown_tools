@@ -15,9 +15,9 @@
 #ifndef LOCALHOST_SHUTDOWN__LOCALHOST_SHUTDOWN_HPP_
 #define LOCALHOST_SHUTDOWN__LOCALHOST_SHUTDOWN_HPP_
 
+#include "boot_shutdown_common/parameter.hpp"
 #include "boot_shutdown_communication/service_client.hpp"
 #include "boot_shutdown_communication/topic_subscriber.hpp"
-#include "boot_shutdown_common/parameter.hpp"
 
 #include "boot_shutdown_internal_msgs/ecu_state_message.pb.h"
 #include "boot_shutdown_internal_msgs/execute_shutdown_service.pb.h"
@@ -42,10 +42,11 @@ class LocalhostShutdown
 {
 public:
   explicit LocalhostShutdown(const std::string & config_yaml_path);
-  LocalhostShutdown(const LocalhostShutdown&) = delete;
-  LocalhostShutdown(LocalhostShutdown&&) = delete;
-  LocalhostShutdown& operator=(const LocalhostShutdown&) = delete;
-  LocalhostShutdown& operator=(LocalhostShutdown&&) = delete;
+  LocalhostShutdown() = delete;
+  LocalhostShutdown(const LocalhostShutdown &) = delete;
+  LocalhostShutdown(LocalhostShutdown &&) = delete;
+  LocalhostShutdown & operator=(const LocalhostShutdown &) = delete;
+  LocalhostShutdown & operator=(LocalhostShutdown &&) = delete;
   void initialize();
   void run();
 

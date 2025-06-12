@@ -15,9 +15,9 @@
 #ifndef BOOT_SHUTDOWN__SERVICE__BOOT_SHUTDOWN_SERVICE_HPP_
 #define BOOT_SHUTDOWN__SERVICE__BOOT_SHUTDOWN_SERVICE_HPP_
 
+#include "boot_shutdown_common/parameter.hpp"
 #include "boot_shutdown_communication/service_server.hpp"
 #include "boot_shutdown_communication/topic_publisher.hpp"
-#include "boot_shutdown_common/parameter.hpp"
 
 #include "boot_shutdown_internal_msgs/ecu_state_message.pb.h"
 #include "boot_shutdown_internal_msgs/execute_shutdown_service.pb.h"
@@ -42,10 +42,11 @@ class BootShutdownService
 {
 public:
   explicit BootShutdownService(const std::string & config_yaml_path);
-  BootShutdownService(const BootShutdownService&) = delete;
-  BootShutdownService(BootShutdownService&&) = delete;
-  BootShutdownService& operator=(const BootShutdownService&) = delete;
-  BootShutdownService& operator=(BootShutdownService&&) = delete;
+  BootShutdownService() = delete;
+  BootShutdownService(const BootShutdownService &) = delete;
+  BootShutdownService(BootShutdownService &&) = delete;
+  BootShutdownService & operator=(const BootShutdownService &) = delete;
+  BootShutdownService & operator=(BootShutdownService &&) = delete;
   bool initialize();
   void run();
   void shutdown();
@@ -90,7 +91,7 @@ private:
   ServiceServer<ExecuteShutdownService>::SharedPtr srv_execute_shutdown_;
 
   std::vector<TopicPublisher<EcuStateMessage>::SharedPtr> pub_ecu_state_;
-  
+
   boost::asio::steady_timer timer_;
 
   // --- Guarded by ecu_state_mutex_ ---
