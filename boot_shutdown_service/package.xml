@@ -4,9 +4,8 @@
   <name>boot_shutdown_service</name>
   <version>0.1.0</version>
   <description>The boot_shutdown_service package</description>
-  <maintainer email="shinnosuke.hirakawa@tier4.jp">Shinnosuke Hirakawa</maintainer>
+  <maintainer email="masaki.nishikawa@tier4.jp">Masaki Nishikawa</maintainer>
   <maintainer email="fumihito.ito@tier4.jp">Fumihito Ito</maintainer>
-
   <license>Apache License 2.0</license>
 
   <buildtool_depend>cmake</buildtool_depend>
