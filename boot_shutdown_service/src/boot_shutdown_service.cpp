@@ -1,4 +1,4 @@
-// Copyright 2022 TIER IV, Inc.
+// Copyright 2022-2025 TIER IV, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ namespace boot_shutdown_service
 
 BootShutdownService::BootShutdownService(const std::string & config_yaml_path)
 : config_yaml_path_(config_yaml_path),
-  topic_address_(parameter_.declare_parameter("topic_address", std::string(""))),
+  topic_address_(parameter_.declare_parameter("topic_address", std::vector<std::string>())),
   topic_port_(parameter_.declare_parameter("topic_port", 10000)),
   prepare_shutdown_port_(parameter_.declare_parameter("prepare_shutdown_port", 10001)),
   execute_shutdown_port_(parameter_.declare_parameter("execute_shutdown_port", 10002)),
@@ -36,16 +36,13 @@ BootShutdownService::BootShutdownService(const std::string & config_yaml_path)
   execute_shutdown_time_(parameter_.declare_parameter("execute_shutdown_time", 13)),
   prepare_shutdown_command_(
     parameter_.declare_parameter("prepare_shutdown_command", std::vector<std::string>())),
-  timer_(io_context_)
+  timer_(io_context_),
+  signals_(io_context_, SIGINT, SIGTERM)
 {
-  std::signal(SIGINT, signalHandler);
-  std::signal(SIGTERM, signalHandler);
 }
 
 bool BootShutdownService::initialize()
 {
-  instance = this;
-
   char hostname[HOST_NAME_MAX + 1];
   gethostname(hostname, sizeof(hostname));
 
@@ -65,8 +62,11 @@ bool BootShutdownService::initialize()
     fmt::format("/api/{}/execute_shutdown", hostname), io_context_, execute_shutdown_port_,
     std::bind(&BootShutdownService::onExecuteShutdown, this, _1, _2));
 
-  pub_ecu_state_ = TopicPublisher<EcuStateMessage>::create_publisher(
-    fmt::format("/{}/get/ecu_state", hostname), io_context_, topic_address_, topic_port_);
+  for (const auto & topic_address : topic_address_) {
+    auto pub_ecu_state = TopicPublisher<EcuStateMessage>::create_publisher(
+      fmt::format("/{}/get/ecu_state", hostname), io_context_, topic_address, topic_port_);
+    pub_ecu_state_.push_back(pub_ecu_state);
+  }
 
   startTimer();
 
@@ -75,6 +75,13 @@ bool BootShutdownService::initialize()
 
 void BootShutdownService::run()
 {
+  signals_.async_wait([this](const boost::system::error_code & error, int signal_number) {
+    if (!error) {
+      std::cout << "Signal received: " << signal_number << std::endl;
+      shutdown();
+    }
+  });
+
   io_context_.run();
 }
 
@@ -83,15 +90,6 @@ void BootShutdownService::shutdown()
   if (!io_context_.stopped()) {
     std::cout << "Shutting down service..." << std::endl;
     io_context_.stop();
-  }
-}
-
-void BootShutdownService::signalHandler(int signum)
-{
-  std::cout << "Signal received: " << signum << std::endl;
-
-  if (instance) {
-    instance->shutdown();
   }
 }
 
@@ -111,7 +109,7 @@ void BootShutdownService::onPrepareShutdown(
     const auto power_off_time =
       prepare_shutdown_start_time_ +
       std::chrono::seconds(prepare_shutdown_time_ + execute_shutdown_time_);
-  
+
     setTimestamp(response.mutable_power_off_time(), power_off_time);
     setTimestamp(ecu_state_.mutable_power_off_time(), power_off_time);
   }
@@ -171,13 +169,16 @@ void BootShutdownService::publish_ecu_state_message()
       ecu_state_.set_state(EcuStateType::SHUTDOWN_TIMEOUT);
     }
   }
-  pub_ecu_state_->publish(ecu_state_);
+
+  for (const auto & pub_ecu_state : pub_ecu_state_) {
+    pub_ecu_state->publish(ecu_state_);
+  }
 }
 
 void BootShutdownService::prepareShutdown()
 {
   {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(is_ready_mutex_);
     is_ready_ = false;
   }
 
@@ -194,7 +195,7 @@ void BootShutdownService::prepareShutdown()
       c.wait();
     }
 
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(is_ready_mutex_);
     is_ready_ = true;
   });
 
@@ -211,28 +212,28 @@ void BootShutdownService::executeShutdown()
   thread.detach();
 }
 
-bool BootShutdownService::isRunning()
+bool BootShutdownService::isRunning() const
 {
   return true;
 }
 
-bool BootShutdownService::isStartupTimeout()
+bool BootShutdownService::isStartupTimeout() const
 {
   return (std::chrono::system_clock::now() - startup_time_) >
          std::chrono::seconds(startup_timeout_);
 }
 
-bool BootShutdownService::isPreparationTimeout()
+bool BootShutdownService::isPreparationTimeout() const
 {
   return (std::chrono::system_clock::now() - prepare_shutdown_start_time_) >
          std::chrono::seconds(prepare_shutdown_time_);
 }
 
-bool BootShutdownService::isReady()
+bool BootShutdownService::isReady() const
 {
   bool is_ready = false;
   {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(is_ready_mutex_);
     is_ready = is_ready_;
   }
 
@@ -251,7 +252,5 @@ void BootShutdownService::setTimestamp(
   timestamp->set_seconds(seconds);
   timestamp->set_nanos(nanos);
 }
-
-BootShutdownService * BootShutdownService::instance = nullptr;
 
 }  // namespace boot_shutdown_service

@@ -1,4 +1,4 @@
-// Copyright 2022 TIER IV, Inc.
+// Copyright 2022-2025 TIER IV, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 
 void usage()
 {
-  printf("Usage: msr_reader [options]\n");
+  printf("Usage: boot_shutdown_service [options]\n");
   printf("  -h --help   : Display help\n");
   printf("  -c --config : Configuration yaml file path\n");
   printf("\n");
@@ -59,6 +59,7 @@ int main(int argc, char ** argv)
 
   service.run();
 
+  // Safe to call shutdown() multiple times; this ensures explicit finalization.
   service.shutdown();
 
   return EXIT_SUCCESS;

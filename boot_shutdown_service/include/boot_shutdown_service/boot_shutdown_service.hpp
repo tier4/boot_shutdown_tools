@@ -1,4 +1,4 @@
-// Copyright 2022 The Autoware Contributors
+// Copyright 2022-2025 TIER IV, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,9 +15,9 @@
 #ifndef BOOT_SHUTDOWN__SERVICE__BOOT_SHUTDOWN_SERVICE_HPP_
 #define BOOT_SHUTDOWN__SERVICE__BOOT_SHUTDOWN_SERVICE_HPP_
 
+#include "boot_shutdown_common/parameter.hpp"
 #include "boot_shutdown_communication/service_server.hpp"
 #include "boot_shutdown_communication/topic_publisher.hpp"
-#include "boot_shutdown_service/parameter.hpp"
 
 #include "boot_shutdown_internal_msgs/ecu_state_message.pb.h"
 #include "boot_shutdown_internal_msgs/execute_shutdown_service.pb.h"
@@ -30,6 +30,7 @@
 namespace boot_shutdown_service
 {
 
+using boot_shutdown_common::Parameter;
 using boot_shutdown_communication::ServiceServer;
 using boot_shutdown_communication::TopicPublisher;
 using boot_shutdown_internal_msgs::msg::EcuStateMessage;
@@ -41,13 +42,16 @@ class BootShutdownService
 {
 public:
   explicit BootShutdownService(const std::string & config_yaml_path);
+  BootShutdownService() = delete;
+  BootShutdownService(const BootShutdownService &) = delete;
+  BootShutdownService(BootShutdownService &&) = delete;
+  BootShutdownService & operator=(const BootShutdownService &) = delete;
+  BootShutdownService & operator=(BootShutdownService &&) = delete;
   bool initialize();
   void run();
   void shutdown();
 
-protected:
-  static void signalHandler(int signum);
-
+private:
   void onPrepareShutdown(const PrepareShutdownService & request, PrepareShutdownService & response);
   void onExecuteShutdown(const ExecuteShutdownService & request, ExecuteShutdownService & response);
 
@@ -58,46 +62,50 @@ protected:
   void prepareShutdown();
   void executeShutdown();
 
-  bool isRunning();
-  bool isStartupTimeout();
-  bool isPreparationTimeout();
-  bool isReady();
+  bool isRunning() const;
+  bool isStartupTimeout() const;
+  bool isPreparationTimeout() const;
+  bool isReady() const;
 
   void setTimestamp(
     google::protobuf::Timestamp * timestamp,
     const std::chrono::system_clock::time_point & time_point);
 
-  std::string config_yaml_path_;
+  const std::string config_yaml_path_;
   Parameter parameter_{config_yaml_path_};
 
-  std::string topic_address_;
-  unsigned short topic_port_;
+  const std::vector<std::string> topic_address_;
+  const unsigned short topic_port_;
 
-  unsigned short prepare_shutdown_port_;
-  unsigned short execute_shutdown_port_;
+  const unsigned short prepare_shutdown_port_;
+  const unsigned short execute_shutdown_port_;
 
-  std::vector<std::string> prepare_shutdown_command_;
-  unsigned int startup_timeout_;
-  unsigned int prepare_shutdown_time_;
-  unsigned int execute_shutdown_time_;
+  const unsigned int startup_timeout_;
+  const unsigned int prepare_shutdown_time_;
+  const unsigned int execute_shutdown_time_;
+  const std::vector<std::string> prepare_shutdown_command_;
 
   boost::asio::io_context io_context_;
 
   ServiceServer<PrepareShutdownService>::SharedPtr srv_prepare_shutdown_;
   ServiceServer<ExecuteShutdownService>::SharedPtr srv_execute_shutdown_;
 
-  TopicPublisher<EcuStateMessage>::SharedPtr pub_ecu_state_;
-  EcuStateMessage ecu_state_;
-  boost::asio::steady_timer timer_;
-  std::mutex ecu_state_mutex_;
+  std::vector<TopicPublisher<EcuStateMessage>::SharedPtr> pub_ecu_state_;
 
-  std::mutex mutex_;
+  boost::asio::steady_timer timer_;
+
+  // --- Guarded by ecu_state_mutex_ ---
+  std::mutex ecu_state_mutex_;
+  EcuStateMessage ecu_state_;
+
+  // --- Guarded by is_ready_mutex_ ---
+  mutable std::mutex is_ready_mutex_;
   bool is_ready_;
 
   std::chrono::system_clock::time_point startup_time_;
   std::chrono::system_clock::time_point prepare_shutdown_start_time_;
 
-  static BootShutdownService * instance;
+  boost::asio::signal_set signals_;
 };
 
 }  // namespace boot_shutdown_service

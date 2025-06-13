@@ -1,4 +1,4 @@
-// Copyright 2022 TIER IV, Inc.
+// Copyright 2022-2025 TIER IV, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,19 +14,24 @@
 
 #include "localhost_shutdown/localhost_shutdown.hpp"
 
+#include <iomanip>
 #include <iostream>
 
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
 
-namespace boot_shutdown_service
+namespace localhost_shutdown
 {
 
-LocalhostShutdown::LocalhostShutdown()
-: service_address_(std::string("127.0.0.1")),
-  service_timeout_(1),
-  prepare_shutdown_port_(10001),
-  execute_shutdown_port_(10002)
+LocalhostShutdown::LocalhostShutdown(const std::string & config_yaml_path)
+: config_yaml_path_(config_yaml_path),
+  topic_port_(parameter_.declare_parameter("topic_port", 10000)),
+  service_address_(parameter_.declare_parameter("service_address", std::string("127.0.0.1"))),
+  service_timeout_(parameter_.declare_parameter("service_timeout", 1)),
+  preparation_timeout_(parameter_.declare_parameter("preparation_timeout", 60)),
+  prepare_shutdown_port_(parameter_.declare_parameter("prepare_shutdown_port", 10001)),
+  execute_shutdown_port_(parameter_.declare_parameter("execute_shutdown_port", 10002)),
+  timer_(io_context_)
 {
 }
 
@@ -44,12 +49,26 @@ void LocalhostShutdown::initialize()
     execute_service_name, io_context_, service_address_, execute_shutdown_port_, service_timeout_);
   cli_prepare_ = ServiceClient<PrepareShutdownService>::create_client(
     prepare_service_name, io_context_, service_address_, prepare_shutdown_port_, service_timeout_);
+
+  sub_ecu_state_ = TopicSubscriber<EcuStateMessage>::create_subscription(
+    fmt::format("/{}/get/ecu_state", hostname), io_context_, topic_port_,
+    [this](const EcuStateMessage & message) {
+      std::lock_guard<std::mutex> lock(ecu_state_mutex_);
+      ecu_state_ = message;
+    });
 }
 
 void LocalhostShutdown::run()
 {
+  prepare_shutdown_timeout_time_ =
+    std::chrono::system_clock::now() + std::chrono::seconds(preparation_timeout_);
   prepareShutdown();
-  executeShutdown();
+  const auto timeout = std::chrono::system_clock::to_time_t(prepare_shutdown_timeout_time_);
+  std::cout << "Shutdown timeout deadline: "
+            << std::put_time(std::localtime(&timeout), "%Y-%m-%d %H:%M:%S") << std::endl;
+
+  startTimer();
+
   io_context_.run();
 }
 
@@ -58,6 +77,12 @@ void LocalhostShutdown::prepareShutdown()
   try {
     PrepareShutdownService req;
     auto resp = cli_prepare_->call(req);
+    auto * status = resp.get();
+    if (status->status().success()) {
+      const auto & timestamp = status->power_off_time();
+      prepare_shutdown_timeout_time_ = std::chrono::system_clock::time_point{
+        std::chrono::seconds(timestamp.seconds()) + std::chrono::nanoseconds(timestamp.nanos())};
+    }
   } catch (const std::runtime_error & e) {
     std::cerr << "Error: " << e.what() << std::endl;
   } catch (...) {
@@ -77,4 +102,34 @@ void LocalhostShutdown::executeShutdown()
   }
 }
 
-}  // namespace boot_shutdown_service
+void LocalhostShutdown::startTimer()
+{
+  timer_.expires_after(std::chrono::seconds(1));
+  timer_.async_wait([this](const boost::system::error_code & error_code) { onTimer(error_code); });
+}
+
+void LocalhostShutdown::onTimer(const boost::system::error_code & error_code)
+{
+  if (!error_code) {
+    EcuStateMessage ecu_state;
+    {
+      std::lock_guard<std::mutex> lock(ecu_state_mutex_);
+      ecu_state = ecu_state_;
+    }
+    if (ecu_state.state() == EcuStateType::SHUTDOWN_READY) {
+      std::cout << "Shutdown is ready, shutdown." << std::endl;
+      executeShutdown();
+      return;
+    }
+    else if (std::chrono::system_clock::now() >= prepare_shutdown_timeout_time_) {
+      std::cerr << "Shutdown timeout reached, forcing shutdown." << std::endl;
+      executeShutdown();
+      return;
+    }
+    startTimer();
+  } else {
+    std::cerr << "Timer error: " << error_code.message() << std::endl;
+  }
+}
+
+}  // namespace localhost_shutdown
