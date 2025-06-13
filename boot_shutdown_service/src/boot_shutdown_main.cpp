@@ -59,6 +59,7 @@ int main(int argc, char ** argv)
 
   service.run();
 
+  // Safe to call shutdown() multiple times; this ensures explicit finalization.
   service.shutdown();
 
   return EXIT_SUCCESS;
