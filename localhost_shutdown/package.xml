@@ -4,8 +4,8 @@
   <name>localhost_shutdown</name>
   <version>0.1.0</version>
   <description>The localhost_shutdown package</description>
+  <maintainer email="masaki.nishikawa@tier4.jp">Masaki Nishikawa</maintainer>
   <maintainer email="fumihito.ito@tier4.jp">Fumihito Ito</maintainer>
-
   <license>Apache License 2.0</license>
 
   <buildtool_depend>cmake</buildtool_depend>
