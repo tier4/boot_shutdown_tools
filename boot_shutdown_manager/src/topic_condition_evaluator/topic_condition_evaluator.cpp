@@ -243,6 +243,9 @@ void TopicConditionEvaluator::notify()
   nlohmann::json topics_json;
   for (const auto & [topic_name, subscription] : subscriptions_) {
     nlohmann::json topic_json;
+
+    topic_json["logic"] = logic_operator_to_string(topic_config_.topic_conditions[topic_name].logic);
+
     if (subscription.condition.has_value()) {
       topic_json["condition"] = subscription.condition.value();
     } else {
