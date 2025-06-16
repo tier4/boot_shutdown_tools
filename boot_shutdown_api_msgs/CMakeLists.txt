@@ -17,6 +17,7 @@ ament_auto_find_build_dependencies()
 rosidl_generate_interfaces(${PROJECT_NAME}
   msg/EcuState.msg
   msg/EcuStateSummary.msg
+  msg/ShutdownReadyState.msg
   srv/ExecuteShutdown.srv
   srv/PrepareShutdown.srv
   srv/Shutdown.srv

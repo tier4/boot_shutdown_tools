@@ -13,10 +13,13 @@
   <depend>boot_shutdown_api_msgs</depend>
   <depend>boot_shutdown_internal_msgs</depend>
   <depend>boost</depend>
+  <depend>dynmsg</depend>
   <depend>fmt</depend>
+  <depend>nlohmann-json-dev</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
   <depend>std_srvs</depend>
+  <depend>yaml_cpp_vendor</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

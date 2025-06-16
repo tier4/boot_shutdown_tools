@@ -9,6 +9,8 @@ ament_auto_find_build_dependencies()
 ament_auto_add_executable(boot_shutdown_manager
   src/boot_shutdown_manager_core.cpp
   src/boot_shutdown_manager_node.cpp
+  src/topic_condition_evaluator/topic_condition_evaluator.cpp
+  src/topic_condition_evaluator/topic_config_parser.cpp
 )
 
 target_include_directories(boot_shutdown_manager PUBLIC

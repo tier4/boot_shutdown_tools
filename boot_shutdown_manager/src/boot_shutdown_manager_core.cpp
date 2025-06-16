@@ -74,6 +74,9 @@ BootShutdownManager::BootShutdownManager()
 
   pub_ecu_state_summary_ =
     create_publisher<EcuStateSummary>("~/output/ecu_state_summary", rclcpp::QoS{1});
+  pub_shutdown_ready_state_ =
+    create_publisher<ShutdownReadyState>("~/output/shutdown_ready", rclcpp::QoS{1});
+
   srv_shutdown = create_service<Shutdown>(
     "~/service/shutdown", std::bind(&BootShutdownManager::onShutdownService, this, _1, _2),
     rmw_qos_profile_default, callback_group_);
@@ -157,6 +160,10 @@ BootShutdownManager::BootShutdownManager()
   const auto period_ns = rclcpp::Rate(update_rate_).period();
   timer_ = rclcpp::create_timer(
     this, get_clock(), period_ns, std::bind(&BootShutdownManager::onTimer, this));
+
+  topic_condition_evaluator_.setup(
+    this, "shutdown_config", "qos_profile_path",
+    std::bind(&BootShutdownManager::onConditionNotification, this, std::placeholders::_1));
 
   io_thread_ = std::thread([this]() { io_context_.run(); });
 }
@@ -349,6 +356,17 @@ rclcpp::Time BootShutdownManager::convertToRclcppTime(
   const google::protobuf::Timestamp & proto_time)
 {
   return rclcpp::Time(proto_time.seconds(), proto_time.nanos(), RCL_SYSTEM_TIME);
+}
+
+void BootShutdownManager::onConditionNotification(const ConditionNotification & notification)
+{
+  ShutdownReadyState shutdown_ready_state;
+
+  shutdown_ready_state.ready = notification.is_condition_met.value_or(true);
+  shutdown_ready_state.reason = notification.reason;
+  shutdown_ready_state.details = notification.details;
+
+  pub_shutdown_ready_state_->publish(shutdown_ready_state);
 }
 
 }  // namespace boot_shutdown_manager

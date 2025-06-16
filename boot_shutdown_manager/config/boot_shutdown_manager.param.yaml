@@ -8,6 +8,12 @@
 #       service_address: nNetwork address used to interact with the ECU’s shutdown-related services
 #       prepare_shutdown_port: Port number used for the shutdown preparation service of the ECU
 #       execute_shutdown_port: Port number used for the shutdown execution service of the ECU
+#   qos_profile_path: Path to a YAML file specifying QoS settings for each topic.
+#   shutdown_config: Specifies the conditions to allow shutdown
+#     logic: [AND, OR] global logic condition
+#       {topic_name}: The topic whose message fields are evaluated
+#         logic: [AND, OR] condition for fields within topic
+#         {field_name}: A condition [eq, ne, le, lt, ge, gt, contains, not_contains]: {value} applied to the message field
 #
 # Note:
 # default values are:
@@ -19,6 +25,10 @@
 #   service_address: 127.0.0.1
 #   prepare_shutdown_port: 10001
 #   execute_shutdown_port: 10002
+# shutdown_config:
+#   logic: AND
+#   {topic_name}:
+#     logic: AND
 ---
 /**:
   ros__parameters:
@@ -38,3 +48,12 @@
         skip_shutdown: true 
       logging:
         service_address: 192.168.20.71
+    qos_profile_path: /etc/autoware_logging_suite/logpacker/qos_profile_overrides.yaml
+    shutdown_config:
+      logic: AND
+      /vehicle/status/velocity_status:
+        logic: AND
+        longitudinal_velocity: { le: 0.0 }
+        lateral_velocity: { le: 0.0 }
+      /api/operation_mode/state:
+        is_autoware_control_enabled: { eq: false }
