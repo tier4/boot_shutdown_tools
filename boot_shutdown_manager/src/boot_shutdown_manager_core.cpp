@@ -181,6 +181,13 @@ void BootShutdownManager::onShutdownService(
 {
   RCLCPP_INFO(get_logger(), "PrepareShutdown start");
 
+  if (!shutdown_ready_){
+    response->status.success = false;
+    response->status.message = "Shutdown is not permitted";
+    RCLCPP_INFO(get_logger(), "Shutdown request rejected: not ready yet.");
+    return;
+  }
+
   for (auto & [ecu_name, client] : ecu_client_queue_) {
     if (client->skip_shutdown) {
       continue;
@@ -222,6 +229,10 @@ void BootShutdownManager::onForceShutdownService(
   RCLCPP_INFO(get_logger(), "ForceShutdown start");
 
   onShutdownService(request, response);
+
+  if (!response->status.success) {
+    return;
+  }
 
   // Enforce notification of SHUTDOWN_PREPARING
   pub_ecu_state_summary_->publish(ecu_state_summary_);
@@ -360,9 +371,11 @@ rclcpp::Time BootShutdownManager::convertToRclcppTime(
 
 void BootShutdownManager::onConditionNotification(const ConditionNotification & notification)
 {
+  shutdown_ready_ = notification.is_condition_met.value_or(true);
+
   ShutdownReadyState shutdown_ready_state;
 
-  shutdown_ready_state.ready = notification.is_condition_met.value_or(true);
+  shutdown_ready_state.ready = shutdown_ready_;
   shutdown_ready_state.reason = notification.reason;
   shutdown_ready_state.details = notification.details;
 
