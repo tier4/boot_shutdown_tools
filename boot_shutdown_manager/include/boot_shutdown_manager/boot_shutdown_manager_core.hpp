@@ -17,6 +17,7 @@
 
 #include "boot_shutdown_communication/service_client.hpp"
 #include "boot_shutdown_communication/topic_subscriber.hpp"
+#include "topic_condition_evaluator/topic_condition_evaluator.hpp"
 
 #include <rclcpp/rclcpp.hpp>
 
@@ -25,6 +26,7 @@
 #include "boot_shutdown_internal_msgs/prepare_shutdown_service.pb.h"
 #include <boot_shutdown_api_msgs/msg/ecu_state.hpp>
 #include <boot_shutdown_api_msgs/msg/ecu_state_summary.hpp>
+#include <boot_shutdown_api_msgs/msg/shutdown_ready_state.hpp>
 #include <boot_shutdown_api_msgs/srv/execute_shutdown.hpp>
 #include <boot_shutdown_api_msgs/srv/prepare_shutdown.hpp>
 #include <boot_shutdown_api_msgs/srv/shutdown.hpp>
@@ -38,6 +40,7 @@ namespace boot_shutdown_manager
 {
 using boot_shutdown_api_msgs::msg::EcuState;
 using boot_shutdown_api_msgs::msg::EcuStateSummary;
+using boot_shutdown_api_msgs::msg::ShutdownReadyState;
 using boot_shutdown_api_msgs::srv::Shutdown;
 
 using boot_shutdown_communication::ServiceClient;
@@ -46,6 +49,8 @@ using boot_shutdown_internal_msgs::msg::EcuStateMessage;
 using boot_shutdown_internal_msgs::msg::EcuStateType;
 using boot_shutdown_internal_msgs::srv::ExecuteShutdownService;
 using boot_shutdown_internal_msgs::srv::PrepareShutdownService;
+
+using topic_condition_evaluator::ConditionNotification;
 
 struct EcuClient
 {
@@ -65,6 +70,7 @@ public:
 
 private:
   rclcpp::Publisher<EcuStateSummary>::SharedPtr pub_ecu_state_summary_;
+  rclcpp::Publisher<ShutdownReadyState>::SharedPtr pub_shutdown_ready_state_;
   rclcpp::Service<Shutdown>::SharedPtr srv_shutdown;
   rclcpp::Service<Shutdown>::SharedPtr srv_force_shutdown_;
   rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr cli_webauto_;
@@ -86,6 +92,9 @@ private:
   std::thread io_thread_;
   unsigned short topic_port_;
   int service_timeout_;
+  std::atomic<bool> shutdown_ready_{true};
+
+  topic_condition_evaluator::TopicConditionEvaluator topic_condition_evaluator_;
 
   void onShutdownService(
     Shutdown::Request::SharedPtr request, Shutdown::Response::SharedPtr response);
@@ -98,6 +107,8 @@ private:
   void executeShutdown();
 
   rclcpp::Time convertToRclcppTime(const google::protobuf::Timestamp & proto_time);
+
+  void onConditionNotification(const ConditionNotification & notification);
 };
 
 }  // namespace boot_shutdown_manager
