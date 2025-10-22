@@ -92,6 +92,7 @@ private:
   std::thread io_thread_;
   unsigned short topic_port_;
   int service_timeout_;
+  double aggregation_timeout_sec_;
   std::atomic<bool> shutdown_ready_{true};
 
   topic_condition_evaluator::TopicConditionEvaluator topic_condition_evaluator_;
