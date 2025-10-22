@@ -15,9 +15,9 @@
 #         logic: [AND, OR] condition for fields within topic
 #         {field_name}: A condition [eq, ne, le, lt, ge, gt, contains, not_contains]: {value} applied to the message field
 #
-#   aggregation_timeout_sec: 60  Maximum time (in seconds) to wait for all ECUs to respond
-#                                during prepare or execute shutdown aggregation.
-#                                If exceeded, remaining ECUs are logged as timeout.
+#   aggregation_timeout_sec: 60.0 Maximum time (in seconds) to wait for all ECUs to respond
+#                                 during prepare or execute shutdown aggregation.
+#                                 If exceeded, remaining ECUs are logged as timeout.
 #
 # Note:
 # default values are:
@@ -41,7 +41,7 @@
     preparation_timeout: 10.0
     topic_port: 10000
     service_timeout: 1
-    aggregation_timeout_sec: 60
+    aggregation_timeout_sec: 60.0
     managed_ecu:
       autoware_ecu:
         state: /autoware_ecu/get/ecu_state
