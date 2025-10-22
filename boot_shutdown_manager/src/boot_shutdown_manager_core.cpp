@@ -237,8 +237,9 @@ void BootShutdownManager::onShutdownService(
 
     // Iterate with structured binding to access the future object.
     for (auto & [ecu_name, future] : futures) {
-      if (!future.valid()) continue;
-
+      if (!future.valid()) {
+        continue;
+      }
       // Non-blocking check for completion.
       if (future.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
         auto result = future.get();
@@ -449,8 +450,9 @@ void BootShutdownManager::executeShutdown()
 
     // Iterate with structured binding to access the future object.
     for (auto & [ecu_name, future] : futures) {
-      if (!future.valid()) continue;
-
+      if (!future.valid()) {
+        continue;
+      }
       // Non-blocking check for completion.
       if (future.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
         auto result = future.get();
