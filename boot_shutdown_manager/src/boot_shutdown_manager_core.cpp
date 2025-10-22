@@ -459,6 +459,8 @@ void BootShutdownManager::executeShutdown()
         }
         if (result.ok && result.power_off > latest_power_off_time) {
           latest_power_off_time = result.power_off;
+          // Update the power-off time in the published ECU state summary
+          ecu_state_summary_.summary.power_off_time = latest_power_off_time;
         }
         --remaining;
         progressed = true;
@@ -488,7 +490,6 @@ void BootShutdownManager::executeShutdown()
   }
 
   is_shutting_down = true;
-  ecu_state_summary_.summary.power_off_time = latest_power_off_time;
 }
 
 rclcpp::Time BootShutdownManager::convertToRclcppTime(
