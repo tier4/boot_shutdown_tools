@@ -14,6 +14,8 @@
 
 #include "boot_shutdown_manager/boot_shutdown_manager_core.hpp"
 
+#include <future>
+
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
 
@@ -65,6 +67,7 @@ BootShutdownManager::BootShutdownManager()
   get_parameter_or("preparation_timeout", preparation_timeout_, 60.0);
   get_parameter_or("topic_port", topic_port_, static_cast<unsigned short>(10000));
   get_parameter_or("service_timeout", service_timeout_, 1);
+  get_parameter_or("aggregation_timeout_sec", aggregation_timeout_sec_, 60.0);
 
   ecu_state_summary_.summary.state = EcuState::STARTUP;
   last_transition_stamp_ = now();
@@ -188,22 +191,85 @@ void BootShutdownManager::onShutdownService(
     return;
   }
 
+  // Local struct to hold the result of each ECU's asynchronous prepare call.
+  struct Result
+  {
+    std::string ecu;
+    bool ok;
+    std::string msg;
+  };
+
+  // Map: ECU name → async future
+  std::map<std::string, std::future<Result>> futures;
+
   for (auto & [ecu_name, client] : ecu_client_queue_) {
     if (client->skip_shutdown) {
       continue;
     }
 
-    try {
-      PrepareShutdownService req;
-      auto resp = client->cli_prepare->call(req);
-      if (!resp) {
-        RCLCPP_WARN(get_logger(), "Prepare shutdown service call failed");
+    futures.emplace(ecu_name, std::async(std::launch::async, [this, ecu_name, client]() -> Result {
+      try {
+        PrepareShutdownService req;
+        auto resp = client->cli_prepare->call(req);
+        if (!resp) {
+          return {ecu_name, false, "failed"};
+        }
+        return {ecu_name, true, ""};
+      } catch (const std::runtime_error & e) {
+        return {ecu_name, false, e.what()};
+      } catch (...) {
+        return {ecu_name, false, "unknown error"};
+      }
+    }));
+  }
+
+  // Wait for all futures to complete or until the timeout expires.
+  // Poll periodically to detect progress and apply an overall deadline.
+  const auto timeout =
+    std::chrono::milliseconds(static_cast<int>(aggregation_timeout_sec_ * 1000.0));
+  const auto deadline = std::chrono::steady_clock::now() + timeout;
+
+  size_t remaining = futures.size();
+
+  // Wait loop
+  while (remaining > 0) {
+    bool progressed = false;
+
+    // Iterate with structured binding to access the future object.
+    for (auto & [ecu_name, future] : futures) {
+      if (!future.valid()) {
         continue;
       }
-    } catch (const std::runtime_error & e) {
-      RCLCPP_WARN(get_logger(), "%s", e.what());
-    } catch (...) {
-      RCLCPP_WARN(get_logger(), "Unknown error occurred");
+      // Non-blocking check for completion.
+      if (future.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
+        auto result = future.get();
+        if (!result.ok) {
+          RCLCPP_WARN(get_logger(), "Prepare failed on %s: %s", result.ecu.c_str(), result.msg.c_str());
+        }
+        --remaining;
+        progressed = true;
+      }
+    }
+
+    // If no task finished in this cycle, check for timeout.
+    if (!progressed) {
+      if (std::chrono::steady_clock::now() >= deadline) {
+        // Timeout reached → collect unfinished ECUs
+        std::ostringstream stream;
+        for (auto & [ecu_name, future] : futures) {
+          if (future.valid() &&
+              future.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready) {
+            stream << ecu_name << " ";
+          }
+        }
+        RCLCPP_WARN(get_logger(), "Prepare timeout: remaining %zu ECUs → %s",
+                    remaining, stream.str().c_str());
+        // Exit on timeout.
+        break;
+      }
+
+      // Small sleep to prevent busy looping (CPU friendly).
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
   }
 
@@ -218,8 +284,9 @@ void BootShutdownManager::onShutdownService(
 
   ecu_state_summary_.summary.state = EcuState::SHUTDOWN_PREPARING;
   last_transition_stamp_ = now();
-  RCLCPP_INFO(get_logger(), "State transioned : -> SHUTDOWN_PREPARING");
+  RCLCPP_INFO(get_logger(), "State transitioned : -> SHUTDOWN_PREPARING");
 
+  // Keep the interface/behavior: always report success here.
   response->status.success = true;
 }
 
@@ -336,31 +403,95 @@ void BootShutdownManager::executeShutdown()
   rclcpp::Clock clock(RCL_SYSTEM_TIME);
   rclcpp::Time latest_power_off_time = clock.now();
 
+  // Local struct to hold the result of each ECU's asynchronous prepare call.
+  struct Result {
+    std::string ecu;
+    bool ok;
+    std::string msg;
+    rclcpp::Time power_off;
+  };
+
+  // Map: ECU name -> async future.
+  std::map<std::string, std::future<Result>> futures;
+
   for (auto & [ecu_name, client] : ecu_client_queue_) {
     if (client->skip_shutdown) {
       continue;
     }
 
-    try {
-      ExecuteShutdownService req;
-      auto resp = client->cli_execute->call(req);
-      if (!resp) {
-        RCLCPP_WARN(get_logger(), "Execute shutdown service call failed");
+    futures.emplace(ecu_name, std::async(std::launch::async, [this, ecu_name, client]() -> Result {
+      try {
+        ExecuteShutdownService req;
+        auto resp = client->cli_execute->call(req);
+        if (!resp) {
+          return Result{ecu_name, false, "failed", rclcpp::Time{}};
+        }
+        rclcpp::Time power_off_time = convertToRclcppTime(resp->power_off_time());
+        return Result{ecu_name, true, "", power_off_time};
+      } catch (const std::runtime_error & e) {
+        return Result{ecu_name, false, e.what(), rclcpp::Time{}};
+      } catch (...) {
+        return Result{ecu_name, false, "unknown error", rclcpp::Time{}};
+      }
+    }));
+  }
+
+  // Wait for all futures to complete or until the timeout expires.
+  // Poll periodically to detect progress and apply an overall deadline.
+  const auto timeout =
+    std::chrono::milliseconds(static_cast<int>(aggregation_timeout_sec_ * 1000.0));
+  const auto deadline = std::chrono::steady_clock::now() + timeout;
+
+  size_t remaining = futures.size();
+
+  // Wait loop
+  while (remaining > 0) {
+    bool progressed = false;
+
+    // Iterate with structured binding to access the future object.
+    for (auto & [ecu_name, future] : futures) {
+      if (!future.valid()) {
         continue;
       }
-      rclcpp::Time power_off_time = convertToRclcppTime(resp->power_off_time());
-      if (latest_power_off_time < power_off_time) {
-        latest_power_off_time = power_off_time;
+      // Non-blocking check for completion.
+      if (future.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
+        auto result = future.get();
+        if (!result.ok) {
+          RCLCPP_WARN(get_logger(), "Execute failed on %s: %s", result.ecu.c_str(), result.msg.c_str());
+        }
+        if (result.ok && result.power_off > latest_power_off_time) {
+          latest_power_off_time = result.power_off;
+          // Update the power-off time in the published ECU state summary
+          ecu_state_summary_.summary.power_off_time = latest_power_off_time;
+        }
+        --remaining;
+        progressed = true;
       }
-    } catch (const std::runtime_error & e) {
-      RCLCPP_WARN(get_logger(), "%s", e.what());
-    } catch (...) {
-      RCLCPP_WARN(get_logger(), "Unknown error occurred");
+    }
+
+    // If no task finished in this cycle, check for timeout.
+    if (!progressed) {
+      if (std::chrono::steady_clock::now() >= deadline) {
+        // Timeout reached → collect unfinished ECUs
+        std::ostringstream stream;
+        for (auto & [ecu_name, future] : futures) {
+          if (future.valid() &&
+              future.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready) {
+            stream << ecu_name << " ";
+          }
+        }
+        RCLCPP_WARN(get_logger(), "Execute timeout: remaining %zu ECUs → %s",
+                    remaining, stream.str().c_str());
+        // Exit on timeout.
+        break;
+      }
+
+      // Small sleep to prevent busy looping (CPU friendly).
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
   }
 
   is_shutting_down = true;
-  ecu_state_summary_.summary.power_off_time = latest_power_off_time;
 }
 
 rclcpp::Time BootShutdownManager::convertToRclcppTime(
